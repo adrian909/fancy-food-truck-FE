@@ -3,12 +3,9 @@ import { motion, AnimatePresence } from "framer-motion";
 import { debug } from "../../shared/utils/debug";
 import { useLanguage } from "../hooks/useLanguage";
 import { ArrowLeft, Plus, Edit2, Trash2, CheckCircle, Clock, X, Shield, Settings, Upload } from "lucide-react";
+import { apiCall, apiGet, apiPost, apiPut, apiDelete } from "../api/apiClient";
 
-// Helper function to build API URLs
-const API_BASE_URL = "https://backend.trifadrian.ro";
-const getApiUrl = (path) => `${API_BASE_URL}${path}`;
-
-// All data operations handled by backend API
+// All data operations handled by backend API with authentication
 
 export default function Admin({ dark, onBack, products = [], setProducts, orders = [], setOrders, currentUser, locationToday, setLocationToday }) {
   const { t } = useLanguage();
@@ -85,42 +82,40 @@ export default function Admin({ dark, onBack, products = [], setProducts, orders
     // Load data immediately - focus on resource loading for LCP
     const loadData = async () => {
       try {
-        const response = await fetch(getApiUrl("/api/products"));
-        if (response.ok) {
-          const data = await response.json();
-          if (data.documents && Array.isArray(data.documents)) {
-            const formattedProducts = data.documents.map(doc => {
-              const fields = doc.fields || {};
-              // Parse customizations from Firestore format
-              let customizations = [];
-              if (fields.customizations?.arrayValue?.values) {
-                customizations = fields.customizations.arrayValue.values.map(val => {
-                  const name = val.mapValue?.fields?.name?.stringValue || "";
-                  const price = val.mapValue?.fields?.price?.doubleValue || 0;
-                  return { name, price };
-                }).filter(c => c.name); // Filter out empty ones
-              }
-              
-              return {
-                id: doc.name.split('/').pop(),
-                title: fields.title?.stringValue || "",
-                price: fields.price?.doubleValue || 0,
-                img: fields.imageUrl?.stringValue || "",
-                desc: fields.description?.stringValue || "",
-                tags: (fields.category?.stringValue || "")
-                  .split(",")
-                  .map(t => t.trim())
-                  .filter(t => t),
-                customizations: customizations,
-              };
-            });
-            setProducts(formattedProducts);
-          } else {
-            setProducts([]);
-          }
+        const data = await apiGet("/api/products");
+        if (data.documents && Array.isArray(data.documents)) {
+          const formattedProducts = data.documents.map(doc => {
+            const fields = doc.fields || {};
+            // Parse customizations from Firestore format
+            let customizations = [];
+            if (fields.customizations?.arrayValue?.values) {
+              customizations = fields.customizations.arrayValue.values.map(val => {
+                const name = val.mapValue?.fields?.name?.stringValue || "";
+                const price = val.mapValue?.fields?.price?.doubleValue || 0;
+                return { name, price };
+              }).filter(c => c.name); // Filter out empty ones
+            }
+            
+            return {
+              id: doc.name.split('/').pop(),
+              title: fields.title?.stringValue || "",
+              price: fields.price?.doubleValue || 0,
+              img: fields.imageUrl?.stringValue || "",
+              desc: fields.description?.stringValue || "",
+              tags: (fields.category?.stringValue || "")
+                .split(",")
+                .map(t => t.trim())
+                .filter(t => t),
+              customizations: customizations,
+            };
+          });
+          setProducts(formattedProducts);
+        } else {
+          setProducts([]);
         }
       } catch (error) {
-        setProducts([]);
+        console.error('Failed to load products:', error);
+        // Don't clear products on error - keep existing data
       }
 
       // Finished loading
@@ -130,51 +125,49 @@ export default function Admin({ dark, onBack, products = [], setProducts, orders
     // Fetch orders immediately when Admin mounts
     const fetchOrders = async () => {
       try {
-        const response = await fetch(getApiUrl("/api/orders"));
-        if (response.ok) {
-          const data = await response.json();
-          if (data.documents && Array.isArray(data.documents)) {
-            const extractValue = (val) => {
-              if (!val) return null;
-              if (val.stringValue) return val.stringValue;
-              if (val.doubleValue) return val.doubleValue;
-              if (val.integerValue) return parseInt(val.integerValue);
-              if (val.booleanValue) return val.booleanValue;
-              if (val.arrayValue) return val.arrayValue.values || [];
-              if (val.mapValue && val.mapValue.fields) {
-                const obj = {};
-                for (const [k, v] of Object.entries(val.mapValue.fields)) {
-                  obj[k] = extractValue(v);
-                }
-                return obj;
+        const data = await apiGet("/api/orders");
+        if (data.documents && Array.isArray(data.documents)) {
+          const extractValue = (val) => {
+            if (!val) return null;
+            if (val.stringValue) return val.stringValue;
+            if (val.doubleValue) return val.doubleValue;
+            if (val.integerValue) return parseInt(val.integerValue);
+            if (val.booleanValue) return val.booleanValue;
+            if (val.arrayValue) return val.arrayValue.values || [];
+            if (val.mapValue && val.mapValue.fields) {
+              const obj = {};
+              for (const [k, v] of Object.entries(val.mapValue.fields)) {
+                obj[k] = extractValue(v);
               }
-              return null;
+              return obj;
+            }
+            return null;
+          };
+          
+          const formattedOrders = data.documents.map(doc => {
+            const fields = doc.fields || {};
+            return {
+              firestoreId: doc.name.split('/').pop(),
+              id: fields.id?.stringValue || "",
+              userId: fields.userId?.stringValue || "",
+              status: fields.status?.stringValue || "pending",
+              eta: fields.eta?.integerValue ? parseInt(fields.eta.integerValue) : 20,
+              timestamp: fields.timestamp?.stringValue || new Date().toISOString(),
+              items: (fields.items?.arrayValue?.values || []).map(extractValue),
+              total: fields.total?.doubleValue || 0,
+              subtotal: fields.subtotal?.doubleValue || 0,
+              delivery: fields.delivery?.doubleValue || 0,
+              tax: fields.tax?.doubleValue || 0,
+              deliveryOption: fields.deliveryOption?.stringValue || "home",
+              userName: fields.userName?.stringValue || "",
+              customer: extractValue(fields.customer),
             };
-            
-            const formattedOrders = data.documents.map(doc => {
-              const fields = doc.fields || {};
-              return {
-                firestoreId: doc.name.split('/').pop(),
-                id: fields.id?.stringValue || "",
-                userId: fields.userId?.stringValue || "",
-                status: fields.status?.stringValue || "pending",
-                eta: fields.eta?.integerValue ? parseInt(fields.eta.integerValue) : 20,
-                timestamp: fields.timestamp?.stringValue || new Date().toISOString(),
-                items: (fields.items?.arrayValue?.values || []).map(extractValue),
-                total: fields.total?.doubleValue || 0,
-                subtotal: fields.subtotal?.doubleValue || 0,
-                delivery: fields.delivery?.doubleValue || 0,
-                tax: fields.tax?.doubleValue || 0,
-                deliveryOption: fields.deliveryOption?.stringValue || "home",
-                userName: fields.userName?.stringValue || "",
-                customer: extractValue(fields.customer),
-              };
-            });
-            setOrders(formattedOrders);
-          }
+          });
+          setOrders(formattedOrders);
         }
       } catch (error) {
-        // Silent error handling
+        console.error('Failed to load orders:', error);
+        // Don't clear orders on error - keep existing data
       }
     };
     

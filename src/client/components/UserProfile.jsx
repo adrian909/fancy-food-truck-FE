@@ -46,39 +46,48 @@ export default function UserProfile({ dark, onBack, currentUser, setCurrentUser 
   useEffect(() => {
     const loadUserData = async () => {
       try {
-        if (currentUser?.id) {
-          // Skip if we just updated the data (within last 3 seconds)
-          const timeSinceUpdate = Date.now() - (currentUser._lastUpdated || 0);
-          if (timeSinceUpdate < 3000) {
-            return;
-          }
+        if (!currentUser?.id) {
+          return;
+        }
+        
+        // Verify token exists before making API call
+        const token = localStorage.getItem('jwt_token');
+        if (!token) {
+          return;
+        }
+        
+        // Skip if we just updated the data (within last 3 seconds)
+        const timeSinceUpdate = Date.now() - (currentUser._lastUpdated || 0);
+        if (timeSinceUpdate < 3000) {
+          return;
+        }
 
-          const data = await apiGet(`/api/users/${currentUser.id}`);
-          if (data.fields) {
-            // Parse Firestore REST response
-            const userData = {
-              name: data.fields.name?.stringValue || "",
-              email: data.fields.email?.stringValue || "",
-              phone: data.fields.phone?.stringValue || "",
-              address: data.fields.address?.stringValue || "",
-              role: data.fields.role?.stringValue || "user",
-            };
-            setFormData(userData);
+        const data = await apiGet(`/api/users/${currentUser.id}`);
+        if (data.fields) {
+          // Parse Firestore REST response
+          const userData = {
+            name: data.fields.name?.stringValue || "",
+            email: data.fields.email?.stringValue || "",
+            phone: data.fields.phone?.stringValue || "",
+            address: data.fields.address?.stringValue || "",
+            role: data.fields.role?.stringValue || "user",
+          };
+          setFormData(userData);
 
-            // Load address details if available
-            if (data.fields.addressDetails?.mapValue?.fields) {
-              const addressDetailsFields = data.fields.addressDetails.mapValue.fields;
-              setAddressDetails({
-                street: addressDetailsFields.street?.stringValue || "",
-                number: addressDetailsFields.number?.stringValue || "",
-                apartment: addressDetailsFields.apartment?.stringValue || "",
-                city: addressDetailsFields.city?.stringValue || "Sebeș",
-              });
-            }
+          // Load address details if available
+          if (data.fields.addressDetails?.mapValue?.fields) {
+            const addressDetailsFields = data.fields.addressDetails.mapValue.fields;
+            setAddressDetails({
+              street: addressDetailsFields.street?.stringValue || "",
+              number: addressDetailsFields.number?.stringValue || "",
+              apartment: addressDetailsFields.apartment?.stringValue || "",
+              city: addressDetailsFields.city?.stringValue || "Sebeș",
+            });
           }
         }
       } catch (error) {
         // Silently ignore errors - user may not exist on backend yet
+        // Don't logout here - let user continue with localStorage data
       }
     };
     loadUserData();

@@ -1,18 +1,20 @@
 import React, { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { debug } from "../../shared/utils/debug";
 import { useLanguage } from "../hooks/useLanguage";
-import { LogIn, UserPlus, Eye, EyeOff, Mail, Lock, User } from "lucide-react";
-import { apiGet, apiPost } from "../api/apiClient";
+import { LogIn, UserPlus, Eye, EyeOff, Mail, Lock, User, AlertCircle, CheckCircle } from "lucide-react";
+import { login, register } from "../../shared/utils/auth";
+import { validatePassword, validateEmail, validateName, getPasswordStrength } from "../../shared/utils/validation";
 
 export default function Auth({ dark, onLoginSuccess, onBackClick }) {
   const { t } = useLanguage();
   const [tab, setTab] = useState("login");
   const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [loginData, setLoginData] = useState({ email: "", password: "" });
   const [signupData, setSignupData] = useState({ name: "", email: "", password: "", confirmPassword: "" });
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
+  const [passwordStrength, setPasswordStrength] = useState('weak');
 
   const handleLoginChange = (e) => {
     const { name, value } = e.target;
@@ -24,100 +26,98 @@ export default function Auth({ dark, onLoginSuccess, onBackClick }) {
     const { name, value } = e.target;
     setSignupData((prev) => ({ ...prev, [name]: value }));
     setErrors((prev) => ({ ...prev, [name]: "" }));
+    
+    // Update password strength indicator
+    if (name === 'password') {
+      setPasswordStrength(getPasswordStrength(value));
+    }
   };
 
-  const validateLogin = () => {
+  const validateLoginForm = () => {
     const newErrors = {};
-    if (!loginData.email) newErrors.email = t("emailRequired");
-    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(loginData.email)) newErrors.email = t("invalidEmail");
-    if (!loginData.password) newErrors.password = t("passwordRequired");
-    else if (loginData.password.length < 6) newErrors.password = t("passwordMinLength");
+    
+    if (!loginData.email) {
+      newErrors.email = "Email-ul este obligatoriu";
+    } else if (!validateEmail(loginData.email)) {
+      newErrors.email = "Format email invalid";
+    }
+    
+    if (!loginData.password) {
+      newErrors.password = "Parola este obligatorie";
+    }
+    
     return newErrors;
   };
 
-  const validateSignup = () => {
+  const validateSignupForm = () => {
     const newErrors = {};
-    if (!signupData.name.trim()) newErrors.name = t("nameRequired");
-    if (!signupData.email) newErrors.email = t("emailRequired");
-    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(signupData.email)) newErrors.email = t("invalidEmail");
-    if (!signupData.password) newErrors.password = t("passwordRequired");
-    else if (signupData.password.length < 6) newErrors.password = t("passwordMinLength");
-    if (signupData.password !== signupData.confirmPassword) newErrors.confirmPassword = t("passwordsMismatch");
+    
+    if (!signupData.name.trim()) {
+      newErrors.name = "Numele este obligatoriu";
+    } else if (!validateName(signupData.name)) {
+      newErrors.name = "Nume invalid. Doar litere și spații";
+    }
+    
+    if (!signupData.email) {
+      newErrors.email = "Email-ul este obligatoriu";
+    } else if (!validateEmail(signupData.email)) {
+      newErrors.email = "Format email invalid";
+    }
+    
+    const passwordValidation = validatePassword(signupData.password);
+    if (!passwordValidation.valid) {
+      newErrors.password = passwordValidation.errors[0]; // Show first error
+    }
+    
+    if (signupData.password !== signupData.confirmPassword) {
+      newErrors.confirmPassword = "Parolele nu coincid";
+    }
+    
     return newErrors;
   };
 
   const handleLogin = async () => {
-    const newErrors = validateLogin();
+    const newErrors = validateLoginForm();
     if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors);
       return;
     }
 
     setLoading(true);
+    setErrors({});
+    
     try {
-      const data = await apiGet("/api/users");
-      
-      const documents = data.documents || [];
-      
-      const userDoc = documents.find(doc => 
-        doc.fields?.email?.stringValue === loginData.email
-      );
-      console.log("Found user doc:", userDoc);
-      
-      if (userDoc) {
-        const userToStore = {
-          id: userDoc.name.split('/').pop(),
-          name: userDoc.fields.name?.stringValue || "",
-          email: userDoc.fields.email?.stringValue || "",
-          phone: userDoc.fields.phone?.stringValue || "",
-          address: userDoc.fields.address?.stringValue || "",
-          role: userDoc.fields.role?.stringValue || "user"
-        };
-        localStorage.setItem("currentUser", JSON.stringify(userToStore));
-        onLoginSuccess(userToStore);
-        setLoginData({ email: "", password: "" });
-      } else {
-        setErrors({ auth: t("loginError") });
-      }
+      const data = await login(loginData.email, loginData.password);
+      onLoginSuccess(data.user);
+      setLoginData({ email: "", password: "" });
     } catch (error) {
-      setErrors({ auth: t("loginError") });
+      setErrors({ auth: error.message || "Autentificare eșuată. Verifică email-ul și parola." });
     } finally {
       setLoading(false);
     }
   };
 
   const handleSignup = async () => {
-    const newErrors = validateSignup();
+    const newErrors = validateSignupForm();
     if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors);
       return;
     }
 
     setLoading(true);
+    setErrors({});
+    
     try {
-      const responseData = await apiPost("/api/users", {
+      const data = await register({
         name: signupData.name,
         email: signupData.email,
-        role: "user",
-        phone: "",
-        address: ""
+        password: signupData.password
       });
-
-      const userId = responseData.name?.split('/').pop() || "new-user";
       
-      const userToStore = { 
-        id: userId, 
-        name: signupData.name, 
-        email: signupData.email, 
-        phone: "",
-        address: "",
-        role: "user"
-      };
-      localStorage.setItem("currentUser", JSON.stringify(userToStore));
-      onLoginSuccess(userToStore);
+      onLoginSuccess(data.user);
       setSignupData({ name: "", email: "", password: "", confirmPassword: "" });
     } catch (error) {
-      setErrors({ auth: t("signupError") });
+      setErrors({ auth: error.message || "Înregistrare eșuată. Email-ul este deja folosit sau datele sunt invalide." });
     } finally {
       setLoading(false);
     }
@@ -356,30 +356,134 @@ export default function Auth({ dark, onLoginSuccess, onBackClick }) {
                       {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                     </button>
                   </div>
+                  
+                  {/* Password Strength Indicator */}
+                  {signupData.password && (
+                    <div className="mt-2">
+                      <div className="flex gap-1 mb-1">
+                        <div className={`h-1 flex-1 rounded ${
+                          passwordStrength === 'weak' ? 'bg-red-500' :
+                          passwordStrength === 'medium' ? 'bg-yellow-500' :
+                          'bg-green-500'
+                        }`} />
+                        <div className={`h-1 flex-1 rounded ${
+                          passwordStrength === 'medium' || passwordStrength === 'strong' ? 
+                          (passwordStrength === 'medium' ? 'bg-yellow-500' : 'bg-green-500') :
+                          dark ? 'bg-neutral-700' : 'bg-slate-200'
+                        }`} />
+                        <div className={`h-1 flex-1 rounded ${
+                          passwordStrength === 'strong' ? 'bg-green-500' : 
+                          dark ? 'bg-neutral-700' : 'bg-slate-200'
+                        }`} />
+                      </div>
+                      <p className={`text-xs ${
+                        passwordStrength === 'weak' ? 'text-red-400' :
+                        passwordStrength === 'medium' ? 'text-yellow-400' :
+                        'text-green-400'
+                      }`}>
+                        Forță parolă: {
+                          passwordStrength === 'weak' ? 'Slabă' :
+                          passwordStrength === 'medium' ? 'Medie' :
+                          'Puternică'
+                        }
+                      </p>
+                    </div>
+                  )}
+                  
+                  {/* Password Requirements */}
+                  <div className={`mt-2 p-2 rounded text-xs space-y-1 ${dark ? "bg-neutral-800" : "bg-slate-100"}`}>
+                    <p className={`font-semibold ${dark ? "text-neutral-300" : "text-slate-700"}`}>Cerințe parolă:</p>
+                    <div className="space-y-0.5">
+                      <div className="flex items-center gap-1.5">
+                        {signupData.password.length >= 8 ? 
+                          <CheckCircle size={12} className="text-green-500" /> : 
+                          <AlertCircle size={12} className="text-slate-400" />
+                        }
+                        <span className={signupData.password.length >= 8 ? "text-green-400" : dark ? "text-neutral-400" : "text-slate-500"}>
+                          Minim 8 caractere
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-1.5">
+                        {/[A-Z]/.test(signupData.password) ? 
+                          <CheckCircle size={12} className="text-green-500" /> : 
+                          <AlertCircle size={12} className="text-slate-400" />
+                        }
+                        <span className={/[A-Z]/.test(signupData.password) ? "text-green-400" : dark ? "text-neutral-400" : "text-slate-500"}>
+                          O literă mare
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-1.5">
+                        {/[a-z]/.test(signupData.password) ? 
+                          <CheckCircle size={12} className="text-green-500" /> : 
+                          <AlertCircle size={12} className="text-slate-400" />
+                        }
+                        <span className={/[a-z]/.test(signupData.password) ? "text-green-400" : dark ? "text-neutral-400" : "text-slate-500"}>
+                          O literă mică
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-1.5">
+                        {/\d/.test(signupData.password) ? 
+                          <CheckCircle size={12} className="text-green-500" /> : 
+                          <AlertCircle size={12} className="text-slate-400" />
+                        }
+                        <span className={/\d/.test(signupData.password) ? "text-green-400" : dark ? "text-neutral-400" : "text-slate-500"}>
+                          O cifră
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-1.5">
+                        {/[!@#$%^&*(),.?":{}|<>]/.test(signupData.password) ? 
+                          <CheckCircle size={12} className="text-green-500" /> : 
+                          <AlertCircle size={12} className="text-slate-400" />
+                        }
+                        <span className={/[!@#$%^&*(),.?":{}|<>]/.test(signupData.password) ? "text-green-400" : dark ? "text-neutral-400" : "text-slate-500"}>
+                          Un caracter special (!@#$%...)
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                  
                   {errors.password && <p className="text-red-400 text-xs mt-1">{errors.password}</p>}
                 </div>
 
                 {/* Confirm Password */}
                 <div>
                   <label className="block text-sm font-semibold mb-2 flex items-center gap-2">
-                    <Lock size={16} /> {t("confirmPassword")}
+                    <Lock size={16} /> Confirmă parola
                   </label>
-                  <input
-                    type={showPassword ? "text" : "password"}
-                    name="confirmPassword"
-                    placeholder="••••••"
-                    value={signupData.confirmPassword}
-                    onChange={handleSignupChange}
-                    className={`w-full px-4 py-3 rounded-lg border transition ${
-                      errors.confirmPassword
-                        ? "border-red-500 bg-red-500/10"
-                        : dark
-                          ? "border-neutral-700 bg-neutral-800 focus:border-amber-400"
-                          : "border-slate-300 bg-white focus:border-amber-400"
-                    } focus:outline-none`}
-                  />
+                  <div className="relative">
+                    <input
+                      type={showConfirmPassword ? "text" : "password"}
+                      name="confirmPassword"
+                      placeholder="••••••"
+                      value={signupData.confirmPassword}
+                      onChange={handleSignupChange}
+                      className={`w-full px-4 py-3 rounded-lg border transition ${
+                        errors.confirmPassword
+                          ? "border-red-500 bg-red-500/10"
+                          : dark
+                            ? "border-neutral-700 bg-neutral-800 focus:border-amber-400"
+                            : "border-slate-300 bg-white focus:border-amber-400"
+                      } focus:outline-none pr-10`}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                      className={`absolute right-3 top-3 ${dark ? "text-neutral-400 hover:text-slate-300" : "text-slate-500 hover:text-slate-700"}`}>
+                      {showConfirmPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                    </button>
+                  </div>
                   {errors.confirmPassword && <p className="text-red-400 text-xs mt-1">{errors.confirmPassword}</p>}
                 </div>
+
+                {/* Auth Error */}
+                {errors.auth && (
+                  <motion.div
+                    initial={{ opacity: 0, y: -10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="p-3 rounded-lg bg-red-500/20 border border-red-500 text-red-400 text-sm">
+                    {errors.auth}
+                  </motion.div>
+                )}
 
                 {/* Signup Button */}
                 <motion.button

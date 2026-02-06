@@ -6,6 +6,7 @@ import { apiPut } from "./api/apiClient";
 import { useMobileOptimization } from "./hooks/useMobileOptimization";
 import { useLanguage } from "./hooks/useLanguage";
 import { LanguageProvider } from "./context/LanguageContext";
+import { logout, getCurrentUser, fetchCSRFToken } from "../shared/utils/auth";
 import Navigation from "./components/Navigation";
 import Hero from "./components/Hero";
 import Menu from "./components/Menu";
@@ -29,8 +30,11 @@ const UserProfile = lazy(() => import("./components/UserProfile"));
 
 function LoadingFallback() {
   return (
-    <div className="min-h-screen flex items-center justify-center">
-      <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-fastfood-red"></div>
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800">
+      <div className="text-center">
+        <div className="animate-spin rounded-full h-16 w-16 border-b-4 border-fastfood-red mx-auto mb-4"></div>
+        <p className="text-gray-600 dark:text-gray-400 text-lg font-medium">Se încarcă...</p>
+      </div>
     </div>
   );
 }
@@ -60,43 +64,10 @@ function AppContent() {
   const [orderPlaced, setOrderPlaced] = useState(null);
   const [showOrderStatus, setShowOrderStatus] = useState(false);
   const [showCheckout, setShowCheckout] = useState(false);
-  const [showAdmin, setShowAdmin] = useState(() => {
-    const savedUiState = localStorage.getItem("uiState");
-    if (savedUiState) {
-      try {
-        const { showAdmin: savedShowAdmin } = JSON.parse(savedUiState);
-        return savedShowAdmin || false;
-      } catch (error) {
-        return false;
-      }
-    }
-    return false;
-  });
+  const [showAdmin, setShowAdmin] = useState(false);
   const [showAuth, setShowAuth] = useState(false);
-  const [showMyOrders, setShowMyOrders] = useState(() => {
-    const savedUiState = localStorage.getItem("uiState");
-    if (savedUiState) {
-      try {
-        const { showMyOrders: savedShowMyOrders } = JSON.parse(savedUiState);
-        return savedShowMyOrders || false;
-      } catch (error) {
-        return false;
-      }
-    }
-    return false;
-  });
-  const [showUserProfile, setShowUserProfile] = useState(() => {
-    const savedUiState = localStorage.getItem("uiState");
-    if (savedUiState) {
-      try {
-        const { showUserProfile: savedShowUserProfile } = JSON.parse(savedUiState);
-        return savedShowUserProfile || false;
-      } catch (error) {
-        return false;
-      }
-    }
-    return false;
-  });
+  const [showMyOrders, setShowMyOrders] = useState(false);
+  const [showUserProfile, setShowUserProfile] = useState(false);
   const [currentUser, setCurrentUser] = useState(null);
   const [isInitialized, setIsInitialized] = useState(false);
   const [products, setProducts] = useState([]);
@@ -104,35 +75,92 @@ function AppContent() {
   const [isLoadingOrders, setIsLoadingOrders] = useState(true);
   const [checkoutData, setCheckoutData] = useState(null);
 
+  // Initialize CSRF token and verify current user
   useEffect(() => {
-    const storedUser = localStorage.getItem("currentUser");
-    const storedAdminState = localStorage.getItem("uiState");
-    
-    if (storedUser) {
-      try {
-        const parsedUser = JSON.parse(storedUser);
-        setCurrentUser(parsedUser);
-
-        
-        if (parsedUser.role === "admin" && storedAdminState) {
-          try {
-            const adminState = JSON.parse(storedAdminState);
-            if (adminState.showAdmin) {
-              setShowAdmin(true);
-
+    const initializeAuth = async () => {
+      // Fetch CSRF token on app start
+      await fetchCSRFToken();
+      
+      // First, check localStorage for saved user
+      const savedUser = localStorage.getItem('currentUser');
+      const savedToken = localStorage.getItem('jwt_token');
+      
+      // Check if savedUser is actually valid (not "undefined" or "null" strings)
+      if (savedUser && savedToken && savedUser !== 'undefined' && savedUser !== 'null' && savedToken !== 'undefined' && savedToken !== 'null') {
+        try {
+          const user = JSON.parse(savedUser);
+          setCurrentUser(user);
+          
+          // Restore UI state after setting user
+          const storedUiState = localStorage.getItem("uiState");
+          
+          if (storedUiState && storedUiState !== 'undefined' && storedUiState !== 'null') {
+            try {
+              const uiState = JSON.parse(storedUiState);
+              
+              // Restore admin panel if user is admin
+              if (user.role === "admin" && uiState.showAdmin) {
+                setShowAdmin(true);
+              }
+              
+              // Restore My Orders page if it was open
+              if (uiState.showMyOrders) {
+                setShowMyOrders(true);
+              }
+              
+              // Restore User Profile page if it was open
+              if (uiState.showUserProfile) {
+                setShowUserProfile(true);
+              }
+            } catch (e) {
+              console.error('Failed to parse UI state:', e);
+              localStorage.removeItem('uiState');
             }
-          } catch (e) {
-
           }
+          
+          // Optionally verify token in background (don't block UI)
+          // Don't update state based on this - just let it run
+          getCurrentUser().catch(() => {
+            // Silently ignore - user data is already in localStorage
+          });
+        } catch (e) {
+          // Invalid saved data - clear it only if parsing failed
+          console.error('Failed to parse saved user data:', e);
+          logout();
+          localStorage.removeItem('uiState');
         }
-      } catch (error) {
-
+      } else {
+        // Clean up any corrupted data
+        if (savedUser === 'undefined' || savedUser === 'null' || savedToken === 'undefined' || savedToken === 'null') {
+          localStorage.removeItem('currentUser');
+          localStorage.removeItem('jwt_token');
+          localStorage.removeItem('uiState');
+        }
       }
-    }
-    
-    setIsInitialized(true);
+      
+      setIsInitialized(true);
+    };
+
+    initializeAuth();
   }, []);
 
+  // Save UI state to localStorage when it changes
+  // But add a small delay to avoid race conditions during page refresh
+  useEffect(() => {
+    if (isInitialized) {
+      // Use a timeout to debounce the save operation
+      const timeoutId = setTimeout(() => {
+        const uiState = {
+          showAdmin,
+          showMyOrders,
+          showUserProfile
+        };
+        localStorage.setItem('uiState', JSON.stringify(uiState));
+      }, 100); // 100ms debounce
+      
+      return () => clearTimeout(timeoutId);
+    }
+  }, [showAdmin, showMyOrders, showUserProfile, isInitialized]);
 
   useEffect(() => {
     if (selectedProduct) {
@@ -156,6 +184,41 @@ function AppContent() {
       }
     }
   }, [isInitialized, currentUser]);
+
+  // Close protected pages when user logs out
+  useEffect(() => {
+    if (isInitialized && !currentUser) {
+      // Only close if there's really no saved user in localStorage
+      const savedUser = localStorage.getItem('currentUser');
+      if (!savedUser) {
+        setShowAdmin(false);
+        setShowMyOrders(false);
+        setShowUserProfile(false);
+      }
+    }
+  }, [isInitialized, currentUser]);
+
+  // Listen for storage changes (logout from other tabs)
+  useEffect(() => {
+    const handleStorageChange = (e) => {
+      if (e.key === 'currentUser' && !e.newValue) {
+        // User was logged out from another tab
+        setCurrentUser(null);
+        setShowAdmin(false);
+        setShowMyOrders(false);
+        setShowUserProfile(false);
+      } else if (e.key === 'jwt_token' && !e.newValue) {
+        // Token was removed from another tab
+        setCurrentUser(null);
+        setShowAdmin(false);
+        setShowMyOrders(false);
+        setShowUserProfile(false);
+      }
+    };
+
+    window.addEventListener('storage', handleStorageChange);
+    return () => window.removeEventListener('storage', handleStorageChange);
+  }, []);
 
   useEffect(() => {
     const loadSettings = async () => {
@@ -548,6 +611,11 @@ function AppContent() {
     setShowOrderStatus(true);
   }
 
+  // Show loading screen until auth is initialized
+  if (!isInitialized) {
+    return <LoadingFallback />;
+  }
+
   return (
     <>
       <AnimatePresence mode="wait">
@@ -641,7 +709,13 @@ function AppContent() {
         {showUserProfile && currentUser && (
           <UserProfile
             dark={dark}
-            onBack={() => setShowUserProfile(false)}
+            onBack={() => {
+              setShowUserProfile(false);
+              // Clear from localStorage immediately
+              const uiState = JSON.parse(localStorage.getItem('uiState') || '{}');
+              uiState.showUserProfile = false;
+              localStorage.setItem('uiState', JSON.stringify(uiState));
+            }}
             currentUser={currentUser}
             setCurrentUser={setCurrentUser}
           />
@@ -653,7 +727,13 @@ function AppContent() {
         {showMyOrders && currentUser && (
           <MyOrders
             dark={dark}
-            onBack={() => setShowMyOrders(false)}
+            onBack={() => {
+              setShowMyOrders(false);
+              // Clear from localStorage immediately
+              const uiState = JSON.parse(localStorage.getItem('uiState') || '{}');
+              uiState.showMyOrders = false;
+              localStorage.setItem('uiState', JSON.stringify(uiState));
+            }}
             orders={orders}
             currentUser={currentUser}
             isLoadingOrders={isLoadingOrders}
@@ -683,7 +763,7 @@ function AppContent() {
       </AnimatePresence>
 
       {/* Navigation - Outside of motion containers so it has proper fixed positioning */}
-      {!showAdmin && !showUserProfile && !showMyOrders && (
+      {!showAdmin && !showUserProfile && !showMyOrders && !showAuth && (
         <Navigation
           dark={dark}
           setDark={setDark}
@@ -692,8 +772,11 @@ function AppContent() {
           onAdminClick={() => setShowAdmin(true)}
           currentUser={currentUser}
           onLogout={() => {
+            logout();
             setCurrentUser(null);
-            localStorage.removeItem("currentUser");
+            setShowAdmin(false);
+            setShowMyOrders(false);
+            setShowUserProfile(false);
           }}
           onAuthClick={() => setShowAuth(true)}
           onMyOrdersClick={() => setShowMyOrders(true)}
@@ -905,7 +988,9 @@ function AppContent() {
   export default function App() {
     return (
       <LanguageProvider>
-        <AppContent />
+        <Suspense fallback={<LoadingFallback />}>
+          <AppContent />
+        </Suspense>
       </LanguageProvider>
     );
   }
