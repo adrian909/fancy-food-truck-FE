@@ -22,6 +22,9 @@ export default function LanguageSelector({ dark, compact = false }) {
           whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.95 }}
           onClick={() => setIsOpen(!isOpen)}
+          aria-label={`Selectează limba — ${currentLanguage?.name ?? language}`}
+          aria-expanded={isOpen}
+          aria-haspopup="listbox"
           className={`p-2 rounded-lg transition ${
             dark
               ? "bg-neutral-800/50 border border-fastfood-orange/30 text-gray-100"
@@ -95,6 +98,8 @@ export default function LanguageSelector({ dark, compact = false }) {
         whileHover={{ scale: 1.05 }}
         whileTap={{ scale: 0.95 }}
         onClick={() => setIsOpen(!isOpen)}
+        aria-expanded={isOpen}
+        aria-haspopup="listbox"
         className={`flex items-center gap-2 px-4 py-2 rounded-xl transition ${
           dark
             ? "bg-neutral-800/50 border border-fastfood-orange/30 hover:border-fastfood-orange/60 text-gray-100"

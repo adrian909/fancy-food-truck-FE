@@ -98,7 +98,7 @@ export default function Navigation({ dark, setDark, cartCount, setShowCart, onAd
               <motion.span 
                 initial={{ scale: 0 }}
                 animate={{ scale: 1 }}
-                className="absolute -top-2 -right-2 bg-fastfood-red text-white text-xs font-bold rounded-full w-6 h-6 flex items-center justify-center">
+                className="absolute -top-2 -right-2 bg-fastfood-red text-gray-900 text-xs font-bold rounded-full w-6 h-6 flex items-center justify-center">
                 {cartCount}
               </motion.span>
             )}

@@ -1,4 +1,3 @@
-import React from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ShoppingCart, X, Plus, Minus, Trash2 } from "lucide-react";
 import { useLanguage } from "../hooks/useLanguage";
@@ -70,8 +69,8 @@ export default function Cart({
                         {c.customizations && Object.keys(c.customizations).length > 0 && (
                           <div className="text-xs mt-1 space-y-0.5">
                             {Object.entries(c.customizations)
-                              .filter(([key, value]) => value)
-                              .map(([key, value]) => {
+                              .filter(([, value]) => value)
+                              .map(([key]) => {
                                 const isRemove = key.startsWith("remove-");
                                 const label = key.replace(/^(remove|add)-/, "");
                                 return (
@@ -146,7 +145,7 @@ export default function Cart({
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
                 onClick={() => setShowCheckout(true)}
-                className="w-full mt-4 px-4 py-3 rounded-xl bg-fastfood-red text-white font-semibold hover:bg-fastfood-red/90 transition-colors">
+                className="w-full mt-4 px-4 py-3 rounded-xl bg-fastfood-red text-gray-900 font-semibold hover:bg-fastfood-red/90 transition-colors">
                 {t("checkout")}
               </motion.button>
             </div>

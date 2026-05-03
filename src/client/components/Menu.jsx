@@ -48,7 +48,7 @@ const ProductCard = React.memo(({ item, idx, dark, onSelect, animationDisabled, 
 
       <button
         onClick={(e) => { e.stopPropagation(); onSelect(item); }}
-        className="w-full py-3 bg-fastfood-red text-white font-semibold hover:bg-fastfood-red/90 transition-colors flex items-center justify-center gap-2 text-sm">
+        className="w-full py-3 bg-fastfood-red text-gray-900 font-semibold hover:bg-fastfood-red/90 transition-colors flex items-center justify-center gap-2 text-sm">
         <ShoppingBag size={16} />
         {t("addToCart")}
       </button>
@@ -118,7 +118,7 @@ function Menu({ dark, filter, setFilter, products, isLoadingProducts, setSelecte
                 onClick={() => setFilter(id)}
                 className={`px-5 py-2 rounded-full text-sm font-semibold transition-all duration-200 whitespace-nowrap ${
                   filter === id
-                    ? "bg-fastfood-red text-white"
+                    ? "bg-fastfood-red text-gray-900"
                     : dark
                     ? "bg-neutral-800 text-neutral-300 hover:bg-neutral-700 border border-neutral-700"
                     : "bg-gray-100 text-gray-700 hover:bg-gray-200 border border-gray-200"

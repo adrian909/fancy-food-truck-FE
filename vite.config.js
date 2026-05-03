@@ -55,6 +55,17 @@ export default defineConfig({
           ) {
             return 'sections';
           }
+          // Merge Checkout, UserProfile, and their shared map utilities into one chunk.
+          // Without this, Vite creates a separate shared chunk for useGoogleMaps that
+          // must load before Checkout can execute, adding a serial hop to the cascade.
+          if (
+            id.includes('/components/Checkout') ||
+            id.includes('/components/UserProfile') ||
+            id.includes('/components/GoogleMapDiv') ||
+            id.includes('/hooks/useGoogleMaps')
+          ) {
+            return 'checkout';
+          }
         },
         entryFileNames: 'assets/[name]-[hash].js',
         chunkFileNames: 'assets/chunk-[name]-[hash].js',
