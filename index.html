@@ -37,6 +37,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link rel="preconnect" href="https://images.unsplash.com" crossorigin>
+    <link rel="preconnect" href="https://backend.trifadrian.ro">
     <link rel="preconnect" href="https://backend.trifadrian.ro" crossorigin>
     <link rel="dns-prefetch" href="https://firebase.googleapis.com">
 
@@ -53,6 +54,26 @@
     
     <!-- Favicon emoji (zero-size, instant) -->
     <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🔥</text></svg>">
+
+    <!-- Critical CSS: prevents FOUC before main stylesheet loads -->
+    <style>
+      html { background-color: #ffffff; }
+      html.dark { background-color: #0b0b0b; }
+      body { margin: 0; }
+      #root { min-height: 100vh; }
+    </style>
+
+    <!-- Apply saved dark mode before first paint to avoid flash -->
+    <script>
+      try {
+        var t = localStorage.getItem('theme');
+        if (t === null ? true : JSON.parse(t)) {
+          document.documentElement.classList.add('dark');
+        }
+      } catch(e) {
+        document.documentElement.classList.add('dark');
+      }
+    </script>
   </head>
   <body>
     <div id="root"></div>
@@ -65,12 +86,6 @@ var s1=document.createElement("script"),s0=document.getElementsByTagName("script
 s1.async=true;
 s1.src='https://embed.tawk.to/693f9a51e13f1e197a0d957b/1jcg75k66';
 s1.charset='UTF-8';
-s1.setAttribute('crossorigin','anonymous');
-s1.onerror = function() {
-  // Tawk.to loading failed - this is expected if CORS blocks the request
-  // The chat widget may still work through Tawk's fallback mechanisms
-  console.debug('Tawk.to load fallback triggered (expected for cross-origin scripts)');
-};
 s0.parentNode.insertBefore(s1,s0);
 })();
 </script>

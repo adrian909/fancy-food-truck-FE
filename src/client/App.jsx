@@ -1,4 +1,4 @@
-import React, { useState, useEffect, Suspense, lazy, startTransition, useCallback, useMemo } from "react";
+import React, { useState, useEffect, useRef, Suspense, lazy, startTransition, useCallback, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ChevronRight, MapPin, Phone, Mail, X, LogOut, User, Settings } from "lucide-react";
 import { debug } from "../shared/utils/debug";
@@ -79,6 +79,9 @@ function AppContent() {
   const [showMyOrders, setShowMyOrders] = useState(false);
   const [showUserProfile, setShowUserProfile] = useState(false);
   const [currentUser, setCurrentUser] = useState(null);
+  const currentUserRef = useRef(null);
+  useEffect(() => { currentUserRef.current = currentUser; }, [currentUser]);
+
   const [isInitialized, setIsInitialized] = useState(false);
   const [products, setProducts] = useState([]);
   const [isLoadingProducts, setIsLoadingProducts] = useState(true);
@@ -307,6 +310,7 @@ function AppContent() {
 
   useEffect(() => {
     const setupListeners = async () => {
+      if (!currentUserRef.current) return () => {};
       try {
         const fetchOrders = async () => {
           try {

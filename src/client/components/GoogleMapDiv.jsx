@@ -35,5 +35,7 @@ export default function GoogleMapDiv({ style, options = {}, onLoad, onIdle }) {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  return <div ref={divRef} style={style} />;
+  // contain:layout isolates this element's layout tree from the document so that
+  // google.maps.Map reading offsetWidth/offsetHeight doesn't trigger a full-page reflow.
+  return <div ref={divRef} style={{ ...style, contain: 'layout' }} />;
 }

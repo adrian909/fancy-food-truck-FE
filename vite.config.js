@@ -1,8 +1,22 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 
+// Convert Vite-injected blocking CSS links to async preload pattern
+const asyncCSSPlugin = {
+  name: 'async-css',
+  apply: 'build',
+  transformIndexHtml(html) {
+    return html.replace(
+      /<link rel="stylesheet" crossorigin href="([^"]+)">/g,
+      (_, href) =>
+        `<link rel="preload" as="style" crossorigin href="${href}" onload="this.onload=null;this.rel='stylesheet'">` +
+        `<noscript><link rel="stylesheet" crossorigin href="${href}"></noscript>`
+    );
+  },
+};
+
 export default defineConfig({
-  plugins: [react()],
+  plugins: [react(), asyncCSSPlugin],
   build: {
     target: 'esnext',
     minify: 'esbuild',
@@ -29,6 +43,17 @@ export default defineConfig({
           // Lucide icons - commonly used but can be optimized
           if (id.includes('lucide-react')) {
             return 'icons';
+          }
+          // Merge the 4 small always-visible page sections into one chunk.
+          // Each is ≤2.3 KiB; keeping them separate wastes 3 extra round-trips
+          // on mobile (each request costs ~455ms in the waterfall).
+          if (
+            id.includes('/components/Location') ||
+            id.includes('/components/About') ||
+            id.includes('/components/Footer') ||
+            id.includes('/components/Testimonials')
+          ) {
+            return 'sections';
           }
         },
         entryFileNames: 'assets/[name]-[hash].js',
