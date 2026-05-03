@@ -311,12 +311,13 @@ export default function Auth({ dark, onLoginSuccess, onBackClick, resetToken, on
                           : dark
                             ? "border-neutral-700 bg-neutral-800 focus:border-amber-400"
                             : "border-slate-300 bg-white focus:border-amber-400"
-                      } focus:outline-none pr-10`}
+                      } focus:outline-none pr-11`}
                     />
                     <button
                       type="button"
                       onClick={() => setShowPassword(!showPassword)}
-                      className={`absolute right-3 top-3 ${dark ? "text-neutral-400 hover:text-slate-300" : "text-slate-500 hover:text-slate-700"}`}>
+                      aria-label={showPassword ? "Ascunde parola" : "Arată parola"}
+                      className={`absolute right-0 top-0 bottom-0 flex items-center justify-center w-11 ${dark ? "text-neutral-400 hover:text-slate-300" : "text-slate-500 hover:text-slate-700"}`}>
                       {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                     </button>
                   </div>
@@ -437,12 +438,12 @@ export default function Auth({ dark, onLoginSuccess, onBackClick, resetToken, on
                               : dark
                                 ? "border-neutral-700 bg-neutral-800 focus:border-amber-400"
                                 : "border-slate-300 bg-white focus:border-amber-400"
-                          } focus:outline-none pr-10`}
+                          } focus:outline-none pr-11`}
                         />
                         <button
                           type="button"
                           onClick={() => setShowPassword(!showPassword)}
-                          className={`absolute right-3 top-3 ${dark ? "text-neutral-400 hover:text-slate-300" : "text-slate-500 hover:text-slate-700"}`}>
+                          className={`absolute right-0 top-0 bottom-0 flex items-center justify-center w-11 ${dark ? "text-neutral-400 hover:text-slate-300" : "text-slate-500 hover:text-slate-700"}`}>
                           {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                         </button>
                       </div>
@@ -492,12 +493,13 @@ export default function Auth({ dark, onLoginSuccess, onBackClick, resetToken, on
                               : dark
                                 ? "border-neutral-700 bg-neutral-800 focus:border-amber-400"
                                 : "border-slate-300 bg-white focus:border-amber-400"
-                          } focus:outline-none pr-10`}
+                          } focus:outline-none pr-11`}
                         />
                         <button
                           type="button"
                           onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                          className={`absolute right-3 top-3 ${dark ? "text-neutral-400 hover:text-slate-300" : "text-slate-500 hover:text-slate-700"}`}>
+                          aria-label={showConfirmPassword ? "Ascunde confirmarea parolei" : "Arată confirmarea parolei"}
+                          className={`absolute right-0 top-0 bottom-0 flex items-center justify-center w-11 ${dark ? "text-neutral-400 hover:text-slate-300" : "text-slate-500 hover:text-slate-700"}`}>
                           {showConfirmPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                         </button>
                       </div>
@@ -688,12 +690,13 @@ export default function Auth({ dark, onLoginSuccess, onBackClick, resetToken, on
                           : dark
                             ? "border-neutral-700 bg-neutral-800 focus:border-amber-400"
                             : "border-slate-300 bg-white focus:border-amber-400"
-                      } focus:outline-none pr-10`}
+                      } focus:outline-none pr-11`}
                     />
                     <button
                       type="button"
                       onClick={() => setShowPassword(!showPassword)}
-                      className={`absolute right-3 top-3 ${dark ? "text-neutral-400 hover:text-slate-300" : "text-slate-500 hover:text-slate-700"}`}>
+                      aria-label={showPassword ? "Ascunde parola" : "Arată parola"}
+                      className={`absolute right-0 top-0 bottom-0 flex items-center justify-center w-11 ${dark ? "text-neutral-400 hover:text-slate-300" : "text-slate-500 hover:text-slate-700"}`}>
                       {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                     </button>
                   </div>
@@ -804,12 +807,12 @@ export default function Auth({ dark, onLoginSuccess, onBackClick, resetToken, on
                           : dark
                             ? "border-neutral-700 bg-neutral-800 focus:border-amber-400"
                             : "border-slate-300 bg-white focus:border-amber-400"
-                      } focus:outline-none pr-10`}
+                      } focus:outline-none pr-11`}
                     />
                     <button
                       type="button"
                       onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                      className={`absolute right-3 top-3 ${dark ? "text-neutral-400 hover:text-slate-300" : "text-slate-500 hover:text-slate-700"}`}>
+                      className={`absolute right-0 top-0 bottom-0 flex items-center justify-center w-11 ${dark ? "text-neutral-400 hover:text-slate-300" : "text-slate-500 hover:text-slate-700"}`}>
                       {showConfirmPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                     </button>
                   </div>

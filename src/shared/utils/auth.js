@@ -7,28 +7,33 @@ const USER_KEY = 'currentUser';
 const CSRF_TOKEN_KEY = 'csrf_token';
 const API_BASE_URL = import.meta.env.DEV ? 'http://localhost:5000' : 'https://backend.trifadrian.ro';
 
+let _csrfFetchInFlight = null;
+
 /**
  * Get CSRF token from backend
  * @returns {Promise<string>} - CSRF token
  */
 export const fetchCSRFToken = async () => {
-  try {
-    const response = await fetch(`${API_BASE_URL}/api/auth/csrf-token`, {
-      credentials: 'include'
-    });
-    
-    if (!response.ok) throw new Error('Failed to fetch CSRF token');
-    
-    const text = await response.text();
-    if (!text) throw new Error('Empty response from server');
-    
-    const data = JSON.parse(text);
-    sessionStorage.setItem(CSRF_TOKEN_KEY, data.token);
-    return data.token;
-  } catch (error) {
-    console.error('CSRF token fetch error:', error);
-    return null;
-  }
+  if (_csrfFetchInFlight) return _csrfFetchInFlight;
+  _csrfFetchInFlight = (async () => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/auth/csrf-token`, {
+        credentials: 'include'
+      });
+      if (!response.ok) throw new Error('Failed to fetch CSRF token');
+      const text = await response.text();
+      if (!text) throw new Error('Empty response from server');
+      const data = JSON.parse(text);
+      sessionStorage.setItem(CSRF_TOKEN_KEY, data.token);
+      return data.token;
+    } catch (error) {
+      console.error('CSRF token fetch error:', error);
+      return null;
+    } finally {
+      _csrfFetchInFlight = null;
+    }
+  })();
+  return _csrfFetchInFlight;
 };
 
 /**

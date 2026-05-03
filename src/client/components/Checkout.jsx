@@ -3,7 +3,8 @@ import { motion, AnimatePresence } from "framer-motion";
 import { debug } from "../../shared/utils/debug";
 import { useLanguage } from "../hooks/useLanguage";
 import { Home, MapPin, Truck, X, CreditCard, Banknote, Map, Navigation, Search } from "lucide-react";
-import { GoogleMap, useJsApiLoader } from "@react-google-maps/api";
+import { useGoogleMaps } from "../hooks/useGoogleMaps";
+import GoogleMapDiv from "./GoogleMapDiv";
 import { apiGet } from "../api/apiClient";
 
 export default function Checkout({
@@ -176,11 +177,7 @@ export default function Checkout({
     }
   }, [showCheckout, currentUser]);
 
-  // Load Google Maps
-  const { isLoaded } = useJsApiLoader({
-    googleMapsApiKey: import.meta.env.VITE_GOOGLE_MAPS_API_KEY,
-    libraries: ["places"],
-  });
+  const { isLoaded } = useGoogleMaps(import.meta.env.VITE_GOOGLE_MAPS_API_KEY, ["places"]);
 
   // Handle body scroll when Checkout opens/closes
   useEffect(() => {
@@ -828,60 +825,26 @@ export default function Checkout({
                 {/* Interactive Map */}
                 {isLoaded ? (
                   <div className="relative w-full h-full flex-1">
-                    <GoogleMap
-                      mapContainerStyle={{ width: '100%', height: '100%', position: 'absolute', top: 0, left: 0 }}
+                    <GoogleMapDiv
+                      style={{ width: '100%', height: '100%', position: 'absolute', top: 0, left: 0 }}
                       onLoad={(map) => {
                         mapRef.current = map;
                         isInitialMapLoadRef.current = true;
-                        // Set initial position only once on load
                         map.setCenter(mapCenter);
                         map.setZoom(16);
-                        
-                        // Add drag listener to track user interaction
-                        mapRef.current.addListener('dragstart', () => {
-                          userDraggingRef.current = true;
-                        });
-                        mapRef.current.addListener('dragend', () => {
-                          userDraggingRef.current = false;
-                        });
-                      }}
-                      options={{
-                        disableDefaultUI: false,
-                        zoomControl: true,
-                        mapTypeControl: false,
-                        fullscreenControl: true,
+                        map.addListener('dragstart', () => { userDraggingRef.current = true; });
+                        map.addListener('dragend', () => { userDraggingRef.current = false; });
                       }}
                       onIdle={() => {
-                        // Skip first idle event (initial load)
-                        if (isInitialMapLoadRef.current) {
-                          isInitialMapLoadRef.current = false;
-                          return;
-                        }
-                        
-                        // Skip if we just did a forward geocode (to prevent ping-pong)
-                        if (skipNextIdleRef.current) {
-                          skipNextIdleRef.current = false;
-                          return;
-                        }
-                        
-                        // Skip if user was just dragging (don't reset center)
-                        if (userDraggingRef.current) {
-                          userDraggingRef.current = false;
-                          return;
-                        }
-                        
-                        // Reverse geocode based on current map center (don't update mapCenter state)
+                        if (isInitialMapLoadRef.current) { isInitialMapLoadRef.current = false; return; }
+                        if (skipNextIdleRef.current) { skipNextIdleRef.current = false; return; }
+                        if (userDraggingRef.current) { userDraggingRef.current = false; return; }
                         if (mapRef.current) {
                           const center = mapRef.current.getCenter();
-                          if (center) {
-                            const lat = center.lat();
-                            const lng = center.lng();
-                            // Only reverse geocode to get address, don't update state
-                            reverseGeocode(lat, lng);
-                          }
+                          if (center) reverseGeocode(center.lat(), center.lng());
                         }
                       }}
-                    ></GoogleMap>
+                    />
 
                     {/* Fixed center marker - stays in middle of screen */}
                     <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-10">

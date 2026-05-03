@@ -80,6 +80,7 @@ function AppContent() {
   const [currentUser, setCurrentUser] = useState(null);
   const [isInitialized, setIsInitialized] = useState(false);
   const [products, setProducts] = useState([]);
+  const [isLoadingProducts, setIsLoadingProducts] = useState(true);
   const [orders, setOrders] = useState([]);
   const [isLoadingOrders, setIsLoadingOrders] = useState(true);
   const [checkoutData, setCheckoutData] = useState(null);
@@ -264,6 +265,42 @@ function AppContent() {
     loadSettings();
   }, []);
 
+  useEffect(() => {
+    const fetchProducts = async () => {
+      try {
+        const data = await apiGet("/api/products");
+        if (data.documents && Array.isArray(data.documents)) {
+          const formattedProducts = data.documents.map(doc => {
+            const fields = doc.fields || {};
+            let customizations = [];
+            if (fields.customizations?.arrayValue?.values) {
+              customizations = fields.customizations.arrayValue.values.map(val => {
+                const name = val.mapValue?.fields?.name?.stringValue || val.stringValue || "";
+                const priceValue = val.mapValue?.fields?.price?.doubleValue || val.mapValue?.fields?.price?.integerValue;
+                const price = typeof priceValue === "string" ? parseFloat(priceValue) : (priceValue || 0);
+                return { name, price };
+              }).filter(c => c.name);
+            }
+            return {
+              id: doc.name.split("/").pop(),
+              title: fields.title?.stringValue || "",
+              price: fields.price?.doubleValue || 0,
+              img: fields.imageUrl?.stringValue || "",
+              desc: fields.description?.stringValue || "",
+              tags: (fields.category?.stringValue || "").split(",").map(t => t.trim()).filter(t => t),
+              customizations,
+            };
+          });
+          startTransition(() => setProducts(formattedProducts));
+        }
+      } catch {
+        // silent fail
+      } finally {
+        setIsLoadingProducts(false);
+      }
+    };
+    fetchProducts();
+  }, []);
 
   useEffect(() => {
     if (!orderPlaced?.id || !orderPlaced?.firestoreId) return;
@@ -290,40 +327,6 @@ function AppContent() {
   useEffect(() => {
     const setupListeners = async () => {
       try {
-        const fetchProducts = async () => {
-          try {
-            const data = await apiGet("/api/products");
-            if (data.documents && Array.isArray(data.documents)) {
-                const formattedProducts = data.documents.map(doc => {
-                  const fields = doc.fields || {};
-                  let customizations = [];
-                  if (fields.customizations?.arrayValue?.values) {
-                    customizations = fields.customizations.arrayValue.values.map(val => {
-                      const name = val.mapValue?.fields?.name?.stringValue || val.stringValue || "";
-                      const priceValue = val.mapValue?.fields?.price?.doubleValue || val.mapValue?.fields?.price?.integerValue;
-                      const price = typeof priceValue === 'string' ? parseFloat(priceValue) : (priceValue || 0);
-                      return { name, price };
-                    }).filter(c => c.name);
-                  }
-                  
-                  const product = {
-                    id: doc.name.split('/').pop(),
-                    title: fields.title?.stringValue || "",
-                    price: fields.price?.doubleValue || 0,
-                    img: fields.imageUrl?.stringValue || "",
-                    desc: fields.description?.stringValue || "",
-                    tags: (fields.category?.stringValue || "").split(",").map(t => t.trim()).filter(t => t),
-                    customizations: customizations,
-                  };
-                  return product;
-                });
-                setProducts(formattedProducts);
-              }
-          } catch (error) {
-            // Silent fail
-          }
-        };
-
         const fetchOrders = async () => {
           try {
             const data = await apiGet("/api/orders");
@@ -376,7 +379,6 @@ function AppContent() {
           }
         };
 
-        await fetchProducts();
         await fetchOrders();
 
         let interval;
@@ -651,7 +653,7 @@ function AppContent() {
             </Suspense>
           </motion.div>
         ) : (
-          <motion.div
+          <motion.main
             key="main"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -673,7 +675,7 @@ function AppContent() {
             
             <Hero dark={dark} />
             <div id="menu">
-              <Menu dark={dark} filter={filter} setFilter={setFilter} addToCart={addToCart} products={products} setSelectedProduct={setSelectedProduct} setQuantity={setQuantity} setCustomizations={setCustomizations} />
+              <Menu dark={dark} filter={filter} setFilter={setFilter} addToCart={addToCart} products={products} isLoadingProducts={isLoadingProducts} setSelectedProduct={setSelectedProduct} setQuantity={setQuantity} setCustomizations={setCustomizations} />
             </div>
             <div id="where">
               <Location dark={dark} locationToday={locationToday} />
@@ -687,7 +689,7 @@ function AppContent() {
             <OrderConfirmation dark={dark} orderPlaced={orderPlaced} />
 
             <Footer dark={dark} />
-          </motion.div>
+          </motion.main>
         )}
       </AnimatePresence>
 

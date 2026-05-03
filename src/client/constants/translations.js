@@ -119,7 +119,8 @@ export const translations = {
     footerTerms: "Termeni de utilizare",
     footerPrivacy: "Politică de confidențialitate",
     "©": "© 2026 Fancy Food Truck. Toate drepturile rezervate.",
-    
+    createdBy: "Acest website a fost creat de",
+
     // Auth
     login: "Autentificare",
     logout: "Deconectare",
@@ -507,7 +508,8 @@ export const translations = {
     footerTerms: "Terms of use",
     footerPrivacy: "Privacy policy",
     "©": "© 2026 Fancy Food Truck. All rights reserved.",
-    
+    createdBy: "This website was created by",
+
     // Auth
     login: "Login",
     logout: "Logout",

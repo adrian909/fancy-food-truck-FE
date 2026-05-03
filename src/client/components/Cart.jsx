@@ -42,6 +42,7 @@ export default function Cart({
               whileHover={{ scale: 1.1 }}
               whileTap={{ scale: 0.95 }}
               onClick={() => setShowCart(false)}
+              aria-label="Închide coșul"
               className={`p-1 rounded-lg transition ${dark ? "hover:bg-gray-800" : "hover:bg-gray-100"}`}>
               <X size={20} />
             </motion.button>
@@ -84,7 +85,8 @@ export default function Cart({
                       <motion.button
                         whileHover={{ scale: 1.1 }}
                         whileTap={{ scale: 0.95 }}
-                        className="p-1 rounded text-fastfood-red hover:bg-fastfood-red/10"
+                        className="p-2 rounded text-fastfood-red hover:bg-fastfood-red/10"
+                        aria-label={`Șterge ${c.title} din coș`}
                         onClick={() => removeFromCart(i)}>
                         <Trash2 size={16} />
                       </motion.button>
@@ -95,7 +97,8 @@ export default function Cart({
                           whileHover={{ scale: 1.1 }}
                           whileTap={{ scale: 0.95 }}
                           onClick={() => updateQuantity(i, c.qty - 1)}
-                          className="p-1 rounded bg-fastfood-red/20 hover:bg-fastfood-red/30">
+                          aria-label={`Scade cantitatea pentru ${c.title}`}
+                          className="p-2 rounded bg-fastfood-red/20 hover:bg-fastfood-red/30">
                           <Minus size={14} className="text-fastfood-red" />
                         </motion.button>
                         <span className="w-6 text-center font-bold">{c.qty}</span>
@@ -103,7 +106,8 @@ export default function Cart({
                           whileHover={{ scale: 1.1 }}
                           whileTap={{ scale: 0.95 }}
                           onClick={() => updateQuantity(i, c.qty + 1)}
-                          className="p-1 rounded bg-fastfood-orange/20 hover:bg-fastfood-orange/30">
+                          aria-label={`Crește cantitatea pentru ${c.title}`}
+                          className="p-2 rounded bg-fastfood-orange/20 hover:bg-fastfood-orange/30">
                           <Plus size={14} className="text-fastfood-orange" />
                         </motion.button>
                       </div>

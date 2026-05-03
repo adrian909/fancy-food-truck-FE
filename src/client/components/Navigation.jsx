@@ -77,6 +77,7 @@ export default function Navigation({ dark, setDark, cartCount, setShowCart, onAd
             whileHover={{ scale: 1.1 }}
             whileTap={{ scale: 0.95 }}
             onClick={() => setDark((d) => !d)}
+            aria-label={dark ? "Activează modul luminos" : "Activează modul întunecat"}
             className={`p-2 rounded-lg transition ${
               dark
                 ? "bg-neutral-800/50 hover:bg-neutral-700/50"
@@ -90,6 +91,7 @@ export default function Navigation({ dark, setDark, cartCount, setShowCart, onAd
             whileHover={{ scale: 1.1 }}
             whileTap={{ scale: 0.95 }}
             onClick={() => setShowCart((s) => !s)}
+            aria-label="Coș de cumpărături"
             className="relative p-2 rounded-lg bg-gradient-to-r from-fastfood-orange to-fastfood-yellow text-white hover:shadow-lg hover:shadow-fastfood-orange/50 transition">
             <ShoppingCart size={20} />
             {cartCount > 0 && (

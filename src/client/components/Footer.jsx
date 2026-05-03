@@ -141,7 +141,16 @@ export default function Footer({ dark }) {
         <div className={`border-t pt-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-center sm:text-left ${
           dark ? "border-neutral-800 text-neutral-400" : "border-gray-300 text-gray-600"
         }`}>
-          <p className="text-sm">{t("©")}</p>
+          <p className="text-sm">
+            {t("©")} &nbsp;·&nbsp; {t("createdBy")}{" "}
+            <a
+              href="https://trifadrian.ro"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="hover:text-fastfood-orange transition font-medium underline underline-offset-2">
+              Adrian Trif
+            </a>
+          </p>
           <div className="flex gap-6 text-sm">
             <a href="/terms" className="hover:text-fastfood-orange transition" rel="noopener noreferrer">{t("footerTerms")}</a>
             <a href="/privacy" className="hover:text-fastfood-orange transition" rel="noopener noreferrer">{t("footerPrivacy")}</a>

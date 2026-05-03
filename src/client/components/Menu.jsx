@@ -3,7 +3,6 @@ import { motion } from "framer-motion";
 import { ShoppingBag, Flame } from "lucide-react";
 import { useMobileOptimization } from "../hooks/useMobileOptimization";
 import { useLanguage } from "../hooks/useLanguage";
-import { apiGet } from "../api/apiClient";
 
 const ProductCard = React.memo(({ item, idx, dark, onSelect, animationDisabled, t }) => (
   <motion.div
@@ -72,54 +71,15 @@ const FILTERS = [
   ["drink", "Băuturi"],
 ];
 
-function Menu({ dark, filter, setFilter, products, setSelectedProduct, setQuantity, setCustomizations }) {
+function Menu({ dark, filter, setFilter, products, isLoadingProducts, setSelectedProduct, setQuantity, setCustomizations }) {
   const { animationDisabled } = useMobileOptimization();
   const { t } = useLanguage();
   const [displayLimit, setDisplayLimit] = useState(12);
-  const [backendProducts, setBackendProducts] = useState([]);
-  const [isLoadingBackend, setIsLoadingBackend] = useState(true);
-
-  React.useEffect(() => {
-    const fetchProducts = async () => {
-      try {
-        const data = await apiGet("/api/products");
-        if (data.documents && Array.isArray(data.documents)) {
-          const formattedProducts = data.documents.map(doc => {
-            const fields = doc.fields || {};
-            let customizations = [];
-            if (fields.customizations?.arrayValue?.values) {
-              customizations = fields.customizations.arrayValue.values.map(val => {
-                const name = val.mapValue?.fields?.name?.stringValue || "";
-                const priceValue = val.mapValue?.fields?.price?.doubleValue || val.mapValue?.fields?.price?.integerValue;
-                const price = typeof priceValue === "string" ? parseFloat(priceValue) : (priceValue || 0);
-                return { name, price };
-              }).filter(c => c.name);
-            }
-            return {
-              id: doc.name.split("/").pop(),
-              title: fields.title?.stringValue || "",
-              price: fields.price?.doubleValue || 0,
-              img: fields.imageUrl?.stringValue || "",
-              desc: fields.description?.stringValue || "",
-              tags: (fields.category?.stringValue || "").split(",").map(t => t.trim()).filter(t => t),
-              customizations,
-            };
-          });
-          setBackendProducts(formattedProducts);
-        }
-      } catch {
-        // silent fail
-      } finally {
-        setIsLoadingBackend(false);
-      }
-    };
-    fetchProducts();
-  }, []);
 
   React.useEffect(() => { setDisplayLimit(12); }, [filter]);
 
-  const menuToUse = backendProducts.length > 0 ? backendProducts : (products || []);
-  const isLoading = isLoadingBackend && menuToUse.length === 0;
+  const menuToUse = products || [];
+  const isLoading = isLoadingProducts && menuToUse.length === 0;
 
   const filteredMenu = useMemo(() =>
     menuToUse.filter(m => filter === "all" || m.tags.includes(filter)),
@@ -140,7 +100,7 @@ function Menu({ dark, filter, setFilter, products, setSelectedProduct, setQuanti
     : { initial: { opacity: 0, y: 30 }, whileInView: { opacity: 1, y: 0 }, transition: { duration: 0.6 } };
 
   return (
-    <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20" id="menu">
+    <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20" id="menu">
       <section>
         <motion.div {...headerAnimation} viewport={{ once: true, amount: 0.1 }} className="mb-10">
           <h2 className={`text-4xl font-black mb-2 ${dark ? "text-white" : "text-gray-900"}`}>
@@ -218,7 +178,7 @@ function Menu({ dark, filter, setFilter, products, setSelectedProduct, setQuanti
           </div>
         )}
       </section>
-    </main>
+    </section>
   );
 }
 
