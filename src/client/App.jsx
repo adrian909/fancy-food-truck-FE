@@ -13,8 +13,7 @@ import Menu from "./components/Menu";
 import Cart from "./components/Cart";
 import { ShoppingBag, Plus, Minus } from "lucide-react";
 
-const API_BASE_URL = import.meta.env.DEV ? "http://localhost:5000" : "https://backend.trifadrian.ro";
-const getApiUrl = (path) => `${API_BASE_URL}${path}`;
+
 const Location = lazy(() => import("./components/Location"));
 const Testimonials = lazy(() => import("./components/Testimonials"));
 const About = lazy(() => import("./components/About"));
@@ -226,8 +225,20 @@ function AppContent() {
       }
     };
 
+    const handleUnauthorized = () => {
+      setCurrentUser(null);
+      setShowAdmin(false);
+      setShowMyOrders(false);
+      setShowUserProfile(false);
+      setShowAuth(true);
+    };
+
     window.addEventListener('storage', handleStorageChange);
-    return () => window.removeEventListener('storage', handleStorageChange);
+    window.addEventListener('auth:unauthorized', handleUnauthorized);
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+      window.removeEventListener('auth:unauthorized', handleUnauthorized);
+    };
   }, []);
 
   useEffect(() => {
@@ -315,54 +326,48 @@ function AppContent() {
 
         const fetchOrders = async () => {
           try {
-            const response = await fetch(getApiUrl("/api/orders"));
-            if (response.ok) {
-              const data = await response.json();
-              if (data.documents && Array.isArray(data.documents)) {
-                const formattedOrders = data.documents.map(doc => {
-                  const fields = doc.fields || {};
-                  
-                  const extractValue = (val) => {
-                    if (!val) return null;
-                    if (val.stringValue) return val.stringValue;
-                    if (val.doubleValue) return val.doubleValue;
-                    if (val.integerValue) return parseInt(val.integerValue);
-                    if (val.booleanValue) return val.booleanValue;
-                    if (val.arrayValue) return val.arrayValue.values || [];
-                    if (val.mapValue && val.mapValue.fields) {
-                      const obj = {};
-                      for (const [k, v] of Object.entries(val.mapValue.fields)) {
-                        obj[k] = extractValue(v);
-                      }
-                      return obj;
-                    }
-                    return null;
-                  };
-                  
-                  return {
-                    firestoreId: doc.name.split('/').pop(),
-                    id: fields.id?.stringValue || "",
-                    userId: fields.userId?.stringValue || "",
-                    status: fields.status?.stringValue || "pending",
-                    eta: fields.eta?.integerValue ? parseInt(fields.eta.integerValue) : 20,
-                    timestamp: fields.timestamp?.stringValue || new Date().toISOString(),
-                    items: (fields.items?.arrayValue?.values || []).map(extractValue),
-                    total: fields.total?.doubleValue || 0,
-                    subtotal: fields.subtotal?.doubleValue || 0,
-                    delivery: fields.delivery?.doubleValue || 0,
-                    tax: fields.tax?.doubleValue || 0,
-                    deliveryOption: fields.deliveryOption?.stringValue || "home",
-                    userName: fields.userName?.stringValue || "",
-                    customer: extractValue(fields.customer),
-                  };
-                });
-                startTransition(() => {
-                  setOrders(formattedOrders);
-                  setIsLoadingOrders(false);
-                });
-              } else {
+            const data = await apiGet("/api/orders");
+            if (data.documents && Array.isArray(data.documents)) {
+              const extractValue = (val) => {
+                if (!val) return null;
+                if (val.stringValue) return val.stringValue;
+                if (val.doubleValue) return val.doubleValue;
+                if (val.integerValue) return parseInt(val.integerValue);
+                if (val.booleanValue) return val.booleanValue;
+                if (val.arrayValue) return val.arrayValue.values || [];
+                if (val.mapValue && val.mapValue.fields) {
+                  const obj = {};
+                  for (const [k, v] of Object.entries(val.mapValue.fields)) {
+                    obj[k] = extractValue(v);
+                  }
+                  return obj;
+                }
+                return null;
+              };
+
+              const formattedOrders = data.documents.map(doc => {
+                const fields = doc.fields || {};
+                return {
+                  firestoreId: doc.name.split('/').pop(),
+                  id: fields.id?.stringValue || "",
+                  userId: fields.userId?.stringValue || "",
+                  status: fields.status?.stringValue || "pending",
+                  eta: fields.eta?.integerValue ? parseInt(fields.eta.integerValue) : 20,
+                  timestamp: fields.timestamp?.stringValue || new Date().toISOString(),
+                  items: (fields.items?.arrayValue?.values || []).map(extractValue),
+                  total: fields.total?.doubleValue || 0,
+                  subtotal: fields.subtotal?.doubleValue || 0,
+                  delivery: fields.delivery?.doubleValue || 0,
+                  tax: fields.tax?.doubleValue || 0,
+                  deliveryOption: fields.deliveryOption?.stringValue || "home",
+                  userName: fields.userName?.stringValue || "",
+                  customer: extractValue(fields.customer),
+                };
+              });
+              startTransition(() => {
+                setOrders(formattedOrders);
                 setIsLoadingOrders(false);
-              }
+              });
             } else {
               setIsLoadingOrders(false);
             }

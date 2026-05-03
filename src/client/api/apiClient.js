@@ -28,9 +28,8 @@ export const apiCall = async (endpoint, options = {}) => {
 
   // Handle 401 Unauthorized - token expired or invalid
   if (response.status === 401) {
-    // Don't automatically logout - just throw error
-    // Let the component decide how to handle authentication failures
-    // This prevents premature logout on transient auth issues
+    logout();
+    window.dispatchEvent(new CustomEvent('auth:unauthorized'));
     throw new Error('Authentication required. Please login again.');
   }
 
