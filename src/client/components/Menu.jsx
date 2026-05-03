@@ -1,88 +1,79 @@
 import React, { useState, useMemo, useCallback } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import { ShoppingBag, Flame, TrendingUp, LogIn } from "lucide-react";
+import { motion } from "framer-motion";
+import { ShoppingBag, Flame } from "lucide-react";
 import { useMobileOptimization } from "../hooks/useMobileOptimization";
 import { useLanguage } from "../hooks/useLanguage";
+import { apiGet } from "../api/apiClient";
 
-// Helper function to build API URLs
-const API_BASE_URL = import.meta.env.DEV ? "http://localhost:5000" : "https://backend.trifadrian.ro";
-const getApiUrl = (path) => `${API_BASE_URL}${path}`;
-
-// Memoized product card to prevent unnecessary re-renders
 const ProductCard = React.memo(({ item, idx, dark, onSelect, animationDisabled, t }) => (
   <motion.div
     key={item.id}
     initial={{ opacity: 0, y: 20 }}
     animate={{ opacity: 1, y: 0 }}
-    transition={{ duration: 0.4, delay: idx * 0.08 }}
+    transition={{ duration: 0.4, delay: idx * 0.06 }}
     exit={{ opacity: 0, y: -20 }}>
     <motion.article
-      whileHover={{ scale: 1.05, y: -8 }}
+      whileHover={{ y: -4 }}
       onClick={() => onSelect(item)}
-      className={`group relative rounded-2xl overflow-hidden backdrop-blur border shadow-lg transition-all h-full flex flex-col cursor-pointer ${
+      className={`group relative rounded-2xl overflow-hidden border shadow-md transition-shadow h-full flex flex-col cursor-pointer ${
         dark
-          ? "border-fastfood-orange/30 bg-gradient-to-br from-neutral-900/80 to-neutral-800/80 hover:shadow-fastfood-red/50"
-          : "border-gray-300 bg-gradient-to-br from-white/90 to-gray-50/90 hover:shadow-fastfood-orange/30"
+          ? "border-white/10 bg-neutral-900 hover:shadow-lg hover:shadow-black/40"
+          : "border-gray-200 bg-white hover:shadow-lg hover:shadow-gray-200"
       }`}>
-      
-      {/* Image Container */}
-      <div className="relative h-48 overflow-hidden bg-gradient-to-b from-fastfood-red/20 to-fastfood-orange/20">
-        <img 
-          src={item.img} 
-          alt={item.title} 
+
+      <div className="relative h-48 overflow-hidden">
+        <img
+          src={item.img}
+          alt={item.title}
           loading="lazy"
-          className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
+          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
         />
-        
-        {/* Badge */}
-        <div className="absolute top-3 right-3 flex items-center gap-1 px-3 py-2 rounded-full bg-gradient-to-r from-fastfood-red to-fastfood-orange text-white text-xs font-bold">
-          <Flame size={14} />
-          {item.tags[0]}
-        </div>
-      </div>
-      
-      {/* Content */}
-      <div className="flex-1 p-4 flex flex-col">
-        <h3 className={`font-black text-lg mb-2 line-clamp-1 ${dark ? "text-white" : "text-gray-900"}`}>{item.title}</h3>
-        <p className={`text-sm mb-4 line-clamp-2 ${dark ? "text-neutral-400" : "text-gray-600"}`}>{item.desc}</p>
-        
-        <div className="flex items-center justify-between mt-auto">
-          <div className="text-3xl font-black bg-gradient-to-r from-fastfood-yellow to-fastfood-orange bg-clip-text text-transparent">
-            {Number(item.price).toFixed(2)}
-            <span className={`text-xs ml-1 ${dark ? "text-neutral-400" : "text-gray-600"}`}>lei</span>
+        {item.tags[0] && (
+          <div className={`absolute top-3 left-3 px-2.5 py-1 rounded-full text-xs font-semibold ${
+            dark ? "bg-black/60 text-white" : "bg-white/80 text-gray-800"
+          } backdrop-blur-sm`}>
+            {item.tags[0]}
           </div>
+        )}
+      </div>
+
+      <div className="flex-1 p-4 flex flex-col">
+        <h3 className={`font-bold text-base mb-1 line-clamp-1 ${dark ? "text-white" : "text-gray-900"}`}>{item.title}</h3>
+        <p className={`text-sm mb-4 line-clamp-2 flex-1 ${dark ? "text-neutral-400" : "text-gray-500"}`}>{item.desc}</p>
+
+        <div className={`text-xl font-black ${dark ? "text-white" : "text-gray-900"}`}>
+          {Number(item.price).toFixed(2)}
+          <span className={`text-sm font-normal ml-1 ${dark ? "text-neutral-400" : "text-gray-500"}`}>lei</span>
         </div>
       </div>
 
-      {/* Add to Cart Button */}
-      <motion.button
-        whileHover={{ scale: 1.05 }}
-        whileTap={{ scale: 0.95 }}
-        onClick={(e) => {
-          e.stopPropagation();
-          onSelect(item);
-        }}
-        className="w-full py-3 bg-gradient-to-r from-fastfood-red to-fastfood-orange text-white font-bold hover:shadow-lg hover:shadow-fastfood-red/50 transition-all duration-200 flex items-center justify-center gap-2">
-        <ShoppingBag size={18} />
+      <button
+        onClick={(e) => { e.stopPropagation(); onSelect(item); }}
+        className="w-full py-3 bg-fastfood-red text-white font-semibold hover:bg-fastfood-red/90 transition-colors flex items-center justify-center gap-2 text-sm">
+        <ShoppingBag size={16} />
         {t("addToCart")}
-      </motion.button>
+      </button>
     </motion.article>
   </motion.div>
-), (prevProps, nextProps) => {
-  // Custom comparison to prevent unnecessary re-renders
-  return (
-    prevProps.item.id === nextProps.item.id &&
-    prevProps.idx === nextProps.idx &&
-    prevProps.dark === nextProps.dark &&
-    prevProps.animationDisabled === nextProps.animationDisabled &&
-    prevProps.t === nextProps.t
-  );
-});
+), (prev, next) =>
+  prev.item.id === next.item.id &&
+  prev.idx === next.idx &&
+  prev.dark === next.dark &&
+  prev.t === next.t
+);
 
-ProductCard.displayName = 'ProductCard';
+ProductCard.displayName = "ProductCard";
 
-function Menu({ dark, filter, setFilter, addToCart, products, setSelectedProduct, setQuantity, setCustomizations }) {
-  const { animationDisabled, isMobile } = useMobileOptimization();
+const FILTERS = [
+  ["all", "Toate"],
+  ["burger", "Burgeri"],
+  ["taco", "Tacos"],
+  ["side", "Garnituri"],
+  ["drink", "Băuturi"],
+];
+
+function Menu({ dark, filter, setFilter, products, setSelectedProduct, setQuantity, setCustomizations }) {
+  const { animationDisabled } = useMobileOptimization();
   const { t } = useLanguage();
   const [displayLimit, setDisplayLimit] = useState(12);
   const [backendProducts, setBackendProducts] = useState([]);
@@ -91,39 +82,33 @@ function Menu({ dark, filter, setFilter, addToCart, products, setSelectedProduct
   React.useEffect(() => {
     const fetchProducts = async () => {
       try {
-        const response = await fetch(getApiUrl("/api/products"));
-        if (response.ok) {
-          const data = await response.json();
-          if (data.documents && Array.isArray(data.documents)) {
-            const formattedProducts = data.documents.map(doc => {
-              const fields = doc.fields || {};
-              
-              // Parse customizations from Firestore format
-              let customizations = [];
-              if (fields.customizations?.arrayValue?.values) {
-                customizations = fields.customizations.arrayValue.values.map(val => {
-                  const name = val.mapValue?.fields?.name?.stringValue || "";
-                  const priceValue = val.mapValue?.fields?.price?.doubleValue || val.mapValue?.fields?.price?.integerValue;
-                  const price = typeof priceValue === 'string' ? parseFloat(priceValue) : (priceValue || 0);
-                  return { name, price };
-                }).filter(c => c.name);
-              }
-
-              return {
-                id: doc.name.split('/').pop(),
-                title: fields.title?.stringValue || "",
-                price: fields.price?.doubleValue || 0,
-                img: fields.imageUrl?.stringValue || "",
-                desc: fields.description?.stringValue || "",
-                tags: (fields.category?.stringValue || "").split(",").map(t => t.trim()).filter(t => t),
-                customizations: customizations,
-              };
-            });
-            setBackendProducts(formattedProducts);
-          }
+        const data = await apiGet("/api/products");
+        if (data.documents && Array.isArray(data.documents)) {
+          const formattedProducts = data.documents.map(doc => {
+            const fields = doc.fields || {};
+            let customizations = [];
+            if (fields.customizations?.arrayValue?.values) {
+              customizations = fields.customizations.arrayValue.values.map(val => {
+                const name = val.mapValue?.fields?.name?.stringValue || "";
+                const priceValue = val.mapValue?.fields?.price?.doubleValue || val.mapValue?.fields?.price?.integerValue;
+                const price = typeof priceValue === "string" ? parseFloat(priceValue) : (priceValue || 0);
+                return { name, price };
+              }).filter(c => c.name);
+            }
+            return {
+              id: doc.name.split("/").pop(),
+              title: fields.title?.stringValue || "",
+              price: fields.price?.doubleValue || 0,
+              img: fields.imageUrl?.stringValue || "",
+              desc: fields.description?.stringValue || "",
+              tags: (fields.category?.stringValue || "").split(",").map(t => t.trim()).filter(t => t),
+              customizations,
+            };
+          });
+          setBackendProducts(formattedProducts);
         }
-      } catch (error) {
-        // Error fetching products
+      } catch {
+        // silent fail
       } finally {
         setIsLoadingBackend(false);
       }
@@ -131,103 +116,55 @@ function Menu({ dark, filter, setFilter, addToCart, products, setSelectedProduct
     fetchProducts();
   }, []);
 
-  const menuToUse = backendProducts.length > 0 ? backendProducts : (products || []);
-  const isLoading = isLoadingBackend || (menuToUse.length === 0);
+  React.useEffect(() => { setDisplayLimit(12); }, [filter]);
 
-  
-  // Memoize filtered menu - prevents recalculation on every render
-  const filteredMenu = useMemo(() => 
-    menuToUse.filter((m) => filter === "all" || m.tags.includes(filter)),
+  const menuToUse = backendProducts.length > 0 ? backendProducts : (products || []);
+  const isLoading = isLoadingBackend && menuToUse.length === 0;
+
+  const filteredMenu = useMemo(() =>
+    menuToUse.filter(m => filter === "all" || m.tags.includes(filter)),
     [menuToUse, filter]
   );
 
-  // Limited menu based on displayLimit
-  const displayedMenu = useMemo(() => 
-    filteredMenu.slice(0, displayLimit),
-    [filteredMenu, displayLimit]
-  );
-
+  const displayedMenu = useMemo(() => filteredMenu.slice(0, displayLimit), [filteredMenu, displayLimit]);
   const hasMore = filteredMenu.length > displayLimit;
 
-  // Memoize callbacks to prevent prop changes on re-render
   const handleProductClick = useCallback((product) => {
     setSelectedProduct(product);
     setQuantity(1);
     setCustomizations({});
   }, [setSelectedProduct, setQuantity, setCustomizations]);
 
-  // Reset display limit when filter changes
-  React.useEffect(() => {
-    setDisplayLimit(12);
-  }, [filter]);
-
-  // Optimized animations for mobile
-  const headerAnimation = useMemo(() => animationDisabled ? {
-    initial: { opacity: 0 },
-    whileInView: { opacity: 1 },
-    transition: { duration: 0.1 }
-  } : {
-    initial: { opacity: 0, y: 40, scale: 0.95 },
-    whileInView: { opacity: 1, y: 0, scale: 1 },
-    transition: { duration: 0.7, ease: "easeOut" }
-  }, [animationDisabled]);
-
-  const flameAnimation = useMemo(() => animationDisabled ? null : {
-    animate: { scale: [1, 1.2, 1], rotate: [0, 10, 0] },
-    transition: { duration: 2, repeat: Infinity, repeatType: "mirror" }
-  }, [animationDisabled]);
+  const headerAnimation = animationDisabled
+    ? { initial: { opacity: 0 }, whileInView: { opacity: 1 }, transition: { duration: 0.1 } }
+    : { initial: { opacity: 0, y: 30 }, whileInView: { opacity: 1, y: 0 }, transition: { duration: 0.6 } };
 
   return (
     <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20" id="menu">
       <section>
-        <motion.div
-          {...headerAnimation}
-          viewport={{ once: false, amount: 0.1 }}
-          className="mb-12">
-          <div className="flex items-center gap-3 mb-4">
-            <motion.div
-              {...flameAnimation}>
-              <Flame className="text-fastfood-red" size={32} />
-            </motion.div>
-            <motion.h2 
-              initial={{ letterSpacing: "-0.05em" }}
-              whileInView={{ letterSpacing: "0em" }}
-              transition={{ duration: 0.8 }}
-              className="text-5xl font-black bg-gradient-to-r from-fastfood-red via-fastfood-orange to-fastfood-yellow bg-clip-text text-transparent">
-              {t("menuTitle")}
-            </motion.h2>
-          </div>
-          <motion.p 
-            initial={{ opacity: 0 }}
-            whileInView={{ opacity: 1 }}
-            transition={{ duration: 0.8, delay: 0.2 }}
-            className={dark ? "text-neutral-400" : "text-gray-600"}>{t("menuDescription")}</motion.p>
+        <motion.div {...headerAnimation} viewport={{ once: true, amount: 0.1 }} className="mb-10">
+          <h2 className={`text-4xl font-black mb-2 ${dark ? "text-white" : "text-gray-900"}`}>
+            {t("menuTitle")}
+          </h2>
+          <p className={dark ? "text-neutral-400" : "text-gray-500"}>{t("menuDescription")}</p>
         </motion.div>
 
         {/* Filter Buttons */}
-        <div className="mb-12 overflow-x-auto pb-2">
+        <div className="mb-10 overflow-x-auto pb-2">
           <div className="flex gap-2 min-w-max">
-            {[
-              ["all", "🔥 Toate", "Toate"],
-              ["burger", "🍔 Burgeri", "Burgeri"],
-              ["taco", "🌮 Tacos", "Tacos"],
-              ["side", "🍟 Garnituri", "Garnituri"],
-              ["drink", "🥤 Băuturi", "Băuturi"],
-            ].map(([id, icon, label]) => (
-              <motion.button
+            {FILTERS.map(([id, label]) => (
+              <button
                 key={id}
-                whileHover={{ scale: 1.08 }}
-                whileTap={{ scale: 0.95 }}
                 onClick={() => setFilter(id)}
-                className={`px-6 py-3 rounded-full font-bold transition-all duration-300 whitespace-nowrap ${
+                className={`px-5 py-2 rounded-full text-sm font-semibold transition-all duration-200 whitespace-nowrap ${
                   filter === id
-                    ? "bg-gradient-to-r from-fastfood-red to-fastfood-orange text-white shadow-lg shadow-fastfood-red/50"
+                    ? "bg-fastfood-red text-white"
                     : dark
-                    ? "bg-neutral-800/50 text-neutral-300 hover:bg-neutral-700/50 border border-neutral-700/50"
-                    : "bg-gray-300/50 text-gray-700 hover:bg-gray-400/50 border border-gray-400/50"
+                    ? "bg-neutral-800 text-neutral-300 hover:bg-neutral-700 border border-neutral-700"
+                    : "bg-gray-100 text-gray-700 hover:bg-gray-200 border border-gray-200"
                 }`}>
-                {icon}
-              </motion.button>
+                {label}
+              </button>
             ))}
           </div>
         </div>
@@ -236,60 +173,49 @@ function Menu({ dark, filter, setFilter, addToCart, products, setSelectedProduct
         {isLoading ? (
           <div className="flex items-center justify-center py-20">
             <div className="flex flex-col items-center gap-4">
-              <motion.div
-                animate={{ rotate: 360 }}
-                transition={{ duration: 2, repeat: Infinity, ease: "linear" }}>
-                <div className="w-16 h-16 border-4 border-fastfood-red/30 border-t-fastfood-red rounded-full" />
+              <motion.div animate={{ rotate: 360 }} transition={{ duration: 1.5, repeat: Infinity, ease: "linear" }}>
+                <div className="w-12 h-12 border-4 border-fastfood-red/20 border-t-fastfood-red rounded-full" />
               </motion.div>
-              <p className={`text-lg font-semibold ${dark ? "text-neutral-400" : "text-gray-600"}`}>
-                {t("loading")}
-              </p>
+              <p className={`text-sm font-medium ${dark ? "text-neutral-400" : "text-gray-500"}`}>{t("loading")}</p>
             </div>
           </div>
         ) : (
-        <>
-        <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-          {displayedMenu.map((item, idx) => (
-            <ProductCard
-              key={item.id}
-              item={item}
-              idx={idx}
-              dark={dark}
-              onSelect={handleProductClick}
-              animationDisabled={animationDisabled}
-              t={t}
-            />
-          ))}
-        </div>
+          <>
+            <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
+              {displayedMenu.map((item, idx) => (
+                <ProductCard
+                  key={item.id}
+                  item={item}
+                  idx={idx}
+                  dark={dark}
+                  onSelect={handleProductClick}
+                  animationDisabled={animationDisabled}
+                  t={t}
+                />
+              ))}
+            </div>
 
-        {/* Load More Button */}
-        {hasMore && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.3 }}
-            className="flex justify-center mt-12">
-            <motion.button
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              onClick={() => setDisplayLimit(prev => prev + 12)}
-              className="px-8 py-3 rounded-full font-bold bg-gradient-to-r from-fastfood-red to-fastfood-orange text-white hover:shadow-lg hover:shadow-fastfood-red/50 transition-all duration-200">
-              📦 {t("viewMore")}
-            </motion.button>
-          </motion.div>
-        )}
-        </>
+            {hasMore && (
+              <div className="flex justify-center mt-10">
+                <button
+                  onClick={() => setDisplayLimit(prev => prev + 12)}
+                  className={`px-8 py-2.5 rounded-full text-sm font-semibold border transition-colors ${
+                    dark
+                      ? "border-neutral-700 text-neutral-300 hover:bg-neutral-800"
+                      : "border-gray-300 text-gray-700 hover:bg-gray-100"
+                  }`}>
+                  {t("viewMore")}
+                </button>
+              </div>
+            )}
+          </>
         )}
 
-        {/* Empty State */}
         {!isLoading && filteredMenu.length === 0 && (
-          <motion.div
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
-            className="text-center py-20">
-            <Flame size={48} className={`mx-auto mb-4 ${dark ? "text-neutral-600" : "text-gray-400"}`} />
-            <p className={`text-lg ${dark ? "text-neutral-400" : "text-gray-600"}`}>{t("noResults")}</p>
-          </motion.div>
+          <div className="text-center py-20">
+            <Flame size={40} className={`mx-auto mb-3 ${dark ? "text-neutral-600" : "text-gray-300"}`} />
+            <p className={dark ? "text-neutral-400" : "text-gray-500"}>{t("noResults")}</p>
+          </div>
         )}
       </section>
     </main>
@@ -297,5 +223,3 @@ function Menu({ dark, filter, setFilter, addToCart, products, setSelectedProduct
 }
 
 export default Menu;
-
-

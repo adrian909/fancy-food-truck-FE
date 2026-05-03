@@ -133,7 +133,7 @@ export default function Cart({
                 </div>
                 <div className={`flex items-center justify-between font-black text-lg pt-2 border-t ${dark ? "border-gray-700" : "border-gray-300"}`}>
                   <div>{t("total")}</div>
-                  <div className="bg-gradient-to-r from-fastfood-red to-fastfood-orange bg-clip-text text-transparent">{total.toFixed(2)} RON</div>
+                  <div>{total.toFixed(2)} RON</div>
                 </div>
               </div>
 
@@ -141,8 +141,8 @@ export default function Cart({
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
                 onClick={() => setShowCheckout(true)}
-                className="w-full mt-4 px-4 py-3 rounded-xl bg-gradient-to-r from-fastfood-red to-fastfood-orange text-white font-bold hover:shadow-lg hover:shadow-fastfood-red/50 transition">
-                💳 {t("checkout")}
+                className="w-full mt-4 px-4 py-3 rounded-xl bg-fastfood-red text-white font-semibold hover:bg-fastfood-red/90 transition-colors">
+                {t("checkout")}
               </motion.button>
             </div>
           )}

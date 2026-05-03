@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { ShoppingCart, Moon, Sun, Settings, LogOut, User, Crown, Flame } from "lucide-react";
+import { ShoppingCart, Moon, Sun, Settings, LogOut, User, Crown, Flame, Package } from "lucide-react";
 import { smoothScrollTo } from "../../shared/utils/smoothScroll";
 import { LOGO } from "../constants/ui";
 import LanguageSelector from "./LanguageSelector";
@@ -120,54 +120,43 @@ export default function Navigation({ dark, setDark, cartCount, setShowCart, onAd
                   initial={{ opacity: 0, y: -10, scale: 0.95 }}
                   animate={{ opacity: 1, y: 0, scale: 1 }}
                   exit={{ opacity: 0, y: -10, scale: 0.95 }}
-                  className="absolute right-0 mt-3 w-56 rounded-xl shadow-2xl border border-fastfood-blue/30 bg-gray-900 z-50 overflow-hidden">
-                  <div className="p-4 bg-gradient-to-r from-fastfood-blue/20 to-fastfood-purple/20 border-b border-fastfood-blue/30">
-                    <p className="font-bold flex items-center gap-2 text-white">
-                      👤 {currentUser.name}
-                      {currentUser.role === "admin" && <Crown size={16} className="text-fastfood-yellow" />}
+                  className={`absolute right-0 mt-3 w-52 rounded-xl shadow-2xl border z-50 overflow-hidden ${dark ? "bg-gray-900 border-white/10" : "bg-white border-gray-200"}`}>
+                  <div className="p-4 border-b border-white/10">
+                    <p className="font-semibold flex items-center gap-2 text-white text-sm">
+                      {currentUser.name}
+                      {currentUser.role === "admin" && <Crown size={14} className="text-fastfood-yellow" />}
                     </p>
-                    <p className="text-xs text-neutral-400 mt-1">{currentUser.email}</p>
-                    <p className={`text-xs mt-2 font-semibold ${currentUser.role === "admin" ? "text-fastfood-yellow" : "text-fastfood-blue"}`}>
-                      {currentUser.role === "admin" ? "👑 Administrator" : "👤 Utilizator"}
-                    </p>
+                    <p className="text-xs text-neutral-400 mt-0.5">{currentUser.email}</p>
                   </div>
 
                   <button
-                    onClick={() => {
-                      setShowUserMenu(false);
-                      onUserProfileClick();
-                    }}
-                    className="w-full text-left px-4 py-2 text-sm transition hover:bg-fastfood-blue/20 text-fastfood-blue font-semibold">
-                    👤 {t("userProfile")}
+                    onClick={() => { setShowUserMenu(false); onUserProfileClick(); }}
+                    className={`w-full text-left px-4 py-2.5 text-sm transition flex items-center gap-2.5 ${dark ? "hover:bg-white/5 text-neutral-200" : "hover:bg-gray-100 text-gray-700"}`}>
+                    <User size={15} />
+                    {t("userProfile")}
                   </button>
 
                   <button
-                    onClick={() => {
-                      setShowUserMenu(false);
-                      onMyOrdersClick();
-                    }}
-                    className="w-full text-left px-4 py-2 text-sm transition hover:bg-fastfood-orange/20 text-fastfood-orange font-semibold flex items-center gap-2">
-                    🛒 {t("myOrders")}
+                    onClick={() => { setShowUserMenu(false); onMyOrdersClick(); }}
+                    className={`w-full text-left px-4 py-2.5 text-sm transition flex items-center gap-2.5 ${dark ? "hover:bg-white/5 text-neutral-200" : "hover:bg-gray-100 text-gray-700"}`}>
+                    <Package size={15} />
+                    {t("myOrders")}
                   </button>
 
                   {currentUser.role === "admin" && (
                     <button
-                      onClick={() => {
-                        setShowUserMenu(false);
-                        onAdminClick();
-                      }}
-                      className="w-full text-left px-4 py-2 text-sm transition hover:bg-fastfood-yellow/20 text-fastfood-yellow font-semibold flex items-center gap-2">
-                      ⚙️ {t("adminPanel")}
+                      onClick={() => { setShowUserMenu(false); onAdminClick(); }}
+                      className={`w-full text-left px-4 py-2.5 text-sm transition flex items-center gap-2.5 ${dark ? "hover:bg-white/5 text-neutral-200" : "hover:bg-gray-100 text-gray-700"}`}>
+                      <Settings size={15} />
+                      {t("adminPanel")}
                     </button>
                   )}
 
                   <button
-                    onClick={() => {
-                      setShowUserMenu(false);
-                      onLogout();
-                    }}
-                    className="w-full text-left px-4 py-2 text-sm transition hover:bg-fastfood-red/20 text-fastfood-red font-semibold flex items-center gap-2 border-t border-neutral-800">
-                    🚪 {t("logout")}
+                    onClick={() => { setShowUserMenu(false); onLogout(); }}
+                    className={`w-full text-left px-4 py-2.5 text-sm transition flex items-center gap-2.5 text-fastfood-red border-t ${dark ? "border-white/10 hover:bg-fastfood-red/10" : "border-gray-200 hover:bg-fastfood-red/5"}`}>
+                    <LogOut size={15} />
+                    {t("logout")}
                   </button>
                 </motion.div>
               )}

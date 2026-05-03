@@ -62,7 +62,7 @@ export default function Hero({ dark }) {
               <h1 className="text-5xl sm:text-6xl lg:text-7xl font-black leading-tight mb-4">
                 <span className={dark ? "text-white" : "text-gray-900"}>{t("heroTitle")}</span>
                 <br />
-                <span className="bg-gradient-to-r from-fastfood-red via-fastfood-orange to-fastfood-yellow bg-clip-text text-transparent animate-pulse">
+                <span className="bg-gradient-to-r from-fastfood-red via-fastfood-orange to-fastfood-yellow bg-clip-text text-transparent">
                   Elevat
                 </span>
               </h1>
