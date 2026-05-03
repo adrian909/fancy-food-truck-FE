@@ -1,22 +1,25 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
+import fs from 'fs'
+import path from 'path'
 
 // Convert Vite-injected blocking CSS links to async preload pattern.
-// order:'post' ensures this runs after Vite registers inline <style> proxy modules —
-// running earlier corrupts Vite's internal html-proxy path map and breaks the build.
+// Uses closeBundle (runs after dist/ is written) to avoid conflicts with
+// Vite 7's html-proxy virtual module system for inline <style> blocks.
 const asyncCSSPlugin = {
   name: 'async-css',
   apply: 'build',
-  transformIndexHtml: {
-    order: 'post',
-    handler(html) {
-      return html.replace(
-        /<link rel="stylesheet" crossorigin href="([^"]+)">/g,
-        (_, href) =>
-          `<link rel="preload" as="style" crossorigin href="${href}" onload="this.onload=null;this.rel='stylesheet'">` +
-          `<noscript><link rel="stylesheet" crossorigin href="${href}"></noscript>`
-      );
-    },
+  closeBundle() {
+    const htmlPath = path.resolve(process.cwd(), 'dist/index.html');
+    if (!fs.existsSync(htmlPath)) return;
+    let html = fs.readFileSync(htmlPath, 'utf-8');
+    html = html.replace(
+      /<link rel="stylesheet" crossorigin href="([^"]+)">/g,
+      (_, href) =>
+        `<link rel="preload" as="style" crossorigin href="${href}" onload="this.onload=null;this.rel='stylesheet'">` +
+        `<noscript><link rel="stylesheet" crossorigin href="${href}"></noscript>`
+    );
+    fs.writeFileSync(htmlPath, html);
   },
 };
 
@@ -37,6 +40,17 @@ export default defineConfig({
       
       output: {
         manualChunks: (id) => {
+          // React core in its own chunk to break the circular dependency:
+          // index.js (entry) → chunk-framer → react → back to index.js.
+          // With react in a neutral vendor chunk, both index.js and chunk-framer
+          // import from vendor without any cycle.
+          if (
+            id.includes('/node_modules/react/') ||
+            id.includes('/node_modules/react-dom/') ||
+            id.includes('/node_modules/scheduler/')
+          ) {
+            return 'vendor';
+          }
           // Firebase bundle - only loaded by Admin/Auth pages
           if (id.includes('firebase')) {
             return 'firebase';

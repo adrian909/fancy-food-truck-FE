@@ -53,14 +53,6 @@
     <!-- Favicon emoji (zero-size, instant) -->
     <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🔥</text></svg>">
 
-    <!-- Critical CSS: prevents FOUC before main stylesheet loads -->
-    <style>
-      html { background-color: #ffffff; }
-      html.dark { background-color: #0b0b0b; }
-      body { margin: 0; }
-      #root { min-height: 100vh; }
-    </style>
-
     <!-- Apply saved dark mode before first paint to avoid flash -->
     <script>
       try {
