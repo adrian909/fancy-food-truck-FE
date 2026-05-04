@@ -151,9 +151,17 @@ export default function Footer({ dark }) {
               Adrian Trif
             </a>
           </p>
-          <div className="flex gap-6 text-sm">
-            <a href="/terms" className="hover:text-fastfood-orange transition" rel="noopener noreferrer">{t("footerTerms")}</a>
-            <a href="/privacy" className="hover:text-fastfood-orange transition" rel="noopener noreferrer">{t("footerPrivacy")}</a>
+          <div className="flex flex-wrap gap-x-5 gap-y-2 text-sm">
+            <a href="/terms" className="hover:text-fastfood-orange transition">{t("footerTerms")}</a>
+            <a href="/privacy" className="hover:text-fastfood-orange transition">{t("footerPrivacy")}</a>
+            <a href="/cookie-policy" className="hover:text-fastfood-orange transition">{t("footerCookies")}</a>
+            <a href="/delivery-policy" className="hover:text-fastfood-orange transition">{t("footerDeliveryPolicy")}</a>
+            <button
+              onClick={() => window.dispatchEvent(new Event("openCookieSettings"))}
+              className="hover:text-fastfood-orange transition cursor-pointer bg-transparent border-none p-0 font-[inherit] text-[inherit]"
+            >
+              {t("footerCookieSettings")}
+            </button>
           </div>
         </div>
       </div>

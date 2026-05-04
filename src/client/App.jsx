@@ -5,7 +5,6 @@ import { debug } from "../shared/utils/debug";
 import { apiPut, apiPost, apiGet } from "./api/apiClient";
 import { useMobileOptimization } from "./hooks/useMobileOptimization";
 import { useLanguage } from "./hooks/useLanguage";
-import { LanguageProvider } from "./context/LanguageContext";
 import { logout, getCurrentUser, fetchCSRFToken } from "../shared/utils/auth";
 import { useScrollLock } from "../shared/utils/scrollLock";
 import Navigation from "./components/Navigation";
@@ -416,6 +415,39 @@ function AppContent() {
         unsubscribeFns();
       }
     };
+  }, []);
+
+  // Load Tawk.to only when the user has consented to functional cookies
+  useEffect(() => {
+    const loadTawk = (consent) => {
+      if (!consent?.functional) return;
+      if (window.__tawkLoaded) return;
+      window.__tawkLoaded = true;
+
+      window.Tawk_API = window.Tawk_API || {};
+      window.Tawk_API.onLoad = function () {
+        try {
+          const user = JSON.parse(localStorage.getItem("currentUser"));
+          if (user?.name && user?.email) {
+            window.Tawk_API.setAttributes({ name: user.name, email: user.email }, () => {});
+          }
+        } catch {}
+      };
+
+      const s1 = document.createElement("script");
+      const s0 = document.getElementsByTagName("script")[0];
+      s1.async = true;
+      s1.src = "https://embed.tawk.to/693f9a51e13f1e197a0d957b/1jcg75k66";
+      s0.parentNode.insertBefore(s1, s0);
+    };
+
+    try {
+      loadTawk(JSON.parse(localStorage.getItem("cookieConsent")));
+    } catch {}
+
+    const handler = (e) => loadTawk(e.detail);
+    window.addEventListener("cookieConsentSaved", handler);
+    return () => window.removeEventListener("cookieConsentSaved", handler);
   }, []);
 
   useEffect(() => {
@@ -992,11 +1024,9 @@ function AppContent() {
   
   export default function App() {
     return (
-      <LanguageProvider>
-        <Suspense fallback={<LoadingFallback />}>
-          <AppContent />
-        </Suspense>
-      </LanguageProvider>
+      <Suspense fallback={<LoadingFallback />}>
+        <AppContent />
+      </Suspense>
     );
   }
 

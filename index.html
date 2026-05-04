@@ -68,37 +68,5 @@
   <body>
     <div id="root"></div>
     <script type="module" src="/src/main.jsx"></script>
-    <!--Start of Tawk.to Script-->
-<script type="text/javascript">
-var Tawk_API=Tawk_API||{}, Tawk_LoadStart=new Date();
-(function(){
-var s1=document.createElement("script"),s0=document.getElementsByTagName("script")[0];
-s1.async=true;
-s1.src='https://embed.tawk.to/693f9a51e13f1e197a0d957b/1jcg75k66';
-s1.charset='UTF-8';
-s0.parentNode.insertBefore(s1,s0);
-})();
-</script>
-<script>
-var Tawk_API = Tawk_API || {};
-
-Tawk_API.onLoad = function () {
-  try {
-    const currentUser = JSON.parse(localStorage.getItem('currentUser'));
-    if (currentUser && currentUser.name && currentUser.email) {
-      Tawk_API.setAttributes({
-        name: currentUser.name,
-        email: currentUser.email
-      }, function (error) {
-        // Error handled silently
-      });
-    }
-  } catch (e) {
-    // Silent error handling
-  }
-};
-</script>
-
-<!--End of Tawk.to Script-->
   </body>
 </html>
